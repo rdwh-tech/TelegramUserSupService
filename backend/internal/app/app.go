@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -20,17 +22,27 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	}
 	defer sqlDb.Close()
 
-	server := &http.Server {
-		Addr: cfg.Server.HTTPAddr,
-		Handler: NewRouter(),
+	server := &http.Server{
+		Addr:              cfg.Server.HTTPAddr,
+		Handler:           NewRouter(),
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
-	err = server.ListenAndServe()
-	if err != nil {
+	errCh := make(chan error, 1)
+	go func() {
+		fmt.Println("server running on", cfg.Server.HTTPAddr)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errCh <- err
+		}
+	}()
+
+	select {
+	case err := <-errCh:
 		return err
+	case <-ctx.Done():
 	}
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	return server.Shutdown(shutdownCtx)
 }
