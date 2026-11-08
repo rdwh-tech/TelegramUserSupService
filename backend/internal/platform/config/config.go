@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Db DbConfig
 	Auth AuthConfig
+	Server HttpServerConfig
 }
 
 type DbConfig struct {
@@ -17,6 +18,10 @@ type DbConfig struct {
 
 type AuthConfig struct {
 	Secret string
+}
+
+type HttpServerConfig struct {
+	HTTPAddr string
 }
 
 func Load() (*Config, error) {
@@ -29,6 +34,7 @@ func Load() (*Config, error) {
 	cfg = Config {
 		Db: DbConfig{Dsn: os.Getenv("DSN")},
 		Auth: AuthConfig{Secret: os.Getenv("SECRET")},
+		Server: HttpServerConfig{HTTPAddr: os.Getenv("HTTPAddr")},
 	}
 
 	return &cfg, nil
