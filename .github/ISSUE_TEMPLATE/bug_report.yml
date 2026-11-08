@@ -1,0 +1,34 @@
+name: 🐛 Bug Report
+description: Сообщи об ошибке в проекте
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Компонент
+      options:
+        - bot
+        - backend
+        - frontend
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Описание бага
+      placeholder: Что произошло?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги для воспроизведения
+      placeholder: "1. ...\n2. ...\n3. Вижу ошибку"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ожидаемое поведение
+    validations:
+      required: true
