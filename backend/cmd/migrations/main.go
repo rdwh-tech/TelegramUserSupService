@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/joho/godotenv"
 	"github.com/rdwh-tech/TelegramUserSupService/internal/platform/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -9,11 +8,11 @@ import (
 )
 
 func main() {
-	err := godotenv.Load(".env")
-	if err != nil {
-		panic(err)
+	dsn := os.Getenv("DSN")
+	if dsn == "" {
+		panic("DSN is not set")
 	}
-	db, err := gorm.Open(postgres.Open(os.Getenv("DSN")), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic(err)
 	}
