@@ -44,3 +44,6 @@ frontend/.env.production
 *.swo
 .DS_Store
 Thumbs.db
+
+# ─── Docker ───
+/postgres-data
