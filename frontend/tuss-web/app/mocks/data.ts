@@ -20,6 +20,7 @@ export const mockUsers: Record<string, User> = {
   operator_l1: {
     id: "u-l1-001",
     companyId: "c-001",
+    companyName: "ООО ТехноПоддержка",
     login: "alex_l1",
     fullName: "Алексей Смирнов",
     role: "operator_l1",
@@ -30,6 +31,7 @@ export const mockUsers: Record<string, User> = {
   operator_l2: {
     id: "u-l2-002",
     companyId: "c-001",
+    companyName: "ООО ТехноПоддержка",
     login: "daria_l2",
     fullName: "Дарья Ковалёва",
     role: "operator_l2",
@@ -40,6 +42,7 @@ export const mockUsers: Record<string, User> = {
   admin: {
     id: "u-adm-003",
     companyId: "c-001",
+    companyName: "ООО ТехноПоддержка",
     login: "admin_boss",
     fullName: "Иван Руководитель",
     role: "admin",
@@ -50,6 +53,7 @@ export const mockUsers: Record<string, User> = {
   unassigned: {
     id: "u-new-004",
     companyId: null,
+    companyName: null,
     login: "mikhail_new",
     fullName: "Михаил Новичков",
     role: "unassigned_operator",

@@ -122,7 +122,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         {user?.companyId ? (
           <Chip
             size="small"
-            label={user.companyId === "c-001" ? "ООО «ТехноПоддержка»" : `Компания #${user.companyId}`}
+            label={user.companyName || `Компания #${user.companyId}`}
             variant="outlined"
             sx={{
               display: { xs: "none", md: "inline-flex" },

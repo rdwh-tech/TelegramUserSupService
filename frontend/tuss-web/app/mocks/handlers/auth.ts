@@ -186,6 +186,7 @@ export const authHandlers = [
     const updatedUser: User = {
       ...user,
       companyId: "c-001",
+      companyName: "ООО ТехноПоддержка",
       role: "operator_l1", // Принимается на роль оператора первой линии
       updatedAt: new Date().toISOString(),
     };
@@ -215,20 +216,23 @@ export const authHandlers = [
     const userId = getUserIdFromToken(request.headers.get("Authorization"));
     const user = userId ? registeredUsers.get(userId) : null;
 
-    const companyId = "c-001";
+    const companyName = body.name?.trim() || "Новая компания";
+    const companyId = `c-${Date.now().toString().slice(-4)}`;
     let updatedUser: User | null = null;
+
     if (user) {
       updatedUser = {
         ...user,
         companyId,
+        companyName,
         updatedAt: new Date().toISOString(),
       };
       registeredUsers.set(user.id, updatedUser);
     }
 
     return HttpResponse.json({
-      company: { id: companyId, name: body.name },
-      user: updatedUser || { ...mockUsers.admin, companyId },
+      company: { id: companyId, name: companyName },
+      user: updatedUser || { ...mockUsers.admin, companyId, companyName },
     });
   }),
 ];
