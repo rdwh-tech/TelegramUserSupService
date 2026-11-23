@@ -59,7 +59,13 @@ export const ticketsHandlers = [
 
     const ticketIndex = mockTickets.findIndex((t) => t.id === params.id);
     if (ticketIndex === -1) {
-      return HttpResponse.json({ message: "Тикет уже взят другим оператором" }, { status: 404 });
+      return HttpResponse.json(
+        {
+          code: "TICKET_ALREADY_TAKEN",
+          message: "Обращение уже взято в работу другим оператором",
+        },
+        { status: 409 }
+      );
     }
 
     const targetTicket = mockTickets[ticketIndex];
