@@ -21,6 +21,8 @@ import { TicketSidebar } from "~/components/tickets/TicketSidebar";
 import { MessageList } from "~/components/chat/MessageList";
 import { MessageComposer } from "~/components/chat/MessageComposer";
 import { ImageLightbox } from "~/components/chat/ImageLightbox";
+import { EscalateTicketModal } from "~/components/tickets/EscalateTicketModal";
+import { CloseTicketModal } from "~/components/tickets/CloseTicketModal";
 import type { ExtendedMessage } from "~/components/chat/MessageItem";
 import type { Ticket } from "~/types/ticket";
 import type { TicketMessage } from "~/types/message";
@@ -42,6 +44,9 @@ export default function TicketDetailsRoute() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false);
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [lightboxState, setLightboxState] = useState<{
     open: boolean;
     url: string | null;
@@ -167,6 +172,28 @@ export default function TicketDetailsRoute() {
 
   const handleImageClick = (imageUrl: string, fileName?: string) => {
     setLightboxState({ open: true, url: imageUrl, fileName });
+  };
+
+  const handleConfirmEscalate = async (reason: string) => {
+    if (!id) return;
+    setIsActionLoading(true);
+    try {
+      await ticketsApi.escalateTicket(id, { reason });
+      navigate(backQueuePath, { replace: true });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleConfirmClose = async (resolutionNotes: string) => {
+    if (!id) return;
+    setIsActionLoading(true);
+    try {
+      await ticketsApi.closeTicket(id, { resolutionNotes });
+      navigate(backQueuePath, { replace: true });
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   return (
@@ -322,8 +349,8 @@ export default function TicketDetailsRoute() {
               ticket={ticket}
               userRole={user?.role}
               isReadOnly={isReadOnly}
-              onOpenEscalateModal={() => {}}
-              onOpenCloseModal={() => {}}
+              onOpenEscalateModal={() => setIsEscalateModalOpen(true)}
+              onOpenCloseModal={() => setIsCloseModalOpen(true)}
             />
           </Box>
         ) : null}
@@ -335,6 +362,28 @@ export default function TicketDetailsRoute() {
           fileName={lightboxState.fileName}
           onClose={() => setLightboxState({ open: false, url: null })}
         />
+
+        {/* Модальное окно эскалации на L2 [TUSS-FE-14] */}
+        {ticket && (
+          <EscalateTicketModal
+            open={isEscalateModalOpen}
+            ticketNumber={ticket.ticketNumber}
+            isLoading={isActionLoading}
+            onConfirm={handleConfirmEscalate}
+            onClose={() => setIsEscalateModalOpen(false)}
+          />
+        )}
+
+        {/* Модальное окно закрытия тикета с CSAT [TUSS-FE-15] */}
+        {ticket && (
+          <CloseTicketModal
+            open={isCloseModalOpen}
+            ticketNumber={ticket.ticketNumber}
+            isLoading={isActionLoading}
+            onConfirm={handleConfirmClose}
+            onClose={() => setIsCloseModalOpen(false)}
+          />
+        )}
       </Box>
     </RoleGuard>
   );
