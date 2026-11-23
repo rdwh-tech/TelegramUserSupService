@@ -1,5 +1,7 @@
 # .gitignore
 
+docs/
+
 # ─── Python (bot) ───
 __pycache__/
 *.py[cod]
@@ -44,3 +46,6 @@ frontend/.env.production
 *.swo
 .DS_Store
 Thumbs.db
+
+# ─── Docker ───
+/postgres-data
