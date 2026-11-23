@@ -25,6 +25,7 @@ Object.defineProperty(window, "matchMedia", {
 // Mock для navigator.clipboard
 Object.defineProperty(navigator, "clipboard", {
   writable: true,
+  configurable: true,
   value: {
     writeText: async () => {},
     readText: async () => "",

@@ -18,6 +18,21 @@ export const m3Theme = createTheme({
             light: "#FFDAD6",
             contrastText: "#FFFFFF",
         },
+        warning: {
+            main: "#9A6B00",
+            light: "#FFE08A",
+            contrastText: "#FFFFFF",
+        },
+        success: {
+            main: "#1E6C30",
+            light: "#C6F2C6",
+            contrastText: "#FFFFFF",
+        },
+        info: {
+            main: "#006399",
+            light: "#C3E8FF",
+            contrastText: "#FFFFFF",
+        },
         background: {
             default: "#FDFBFF",      // Surface
             paper: "#F1F4FB",        // Surface Container High
