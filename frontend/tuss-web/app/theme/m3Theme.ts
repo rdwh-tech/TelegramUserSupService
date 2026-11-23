@@ -64,7 +64,14 @@ export function buildM3Theme(options: BuildThemeOptions = {}): Theme {
       primaryMain = pMeta.primaryDark;
       primaryLight = hslToHex(h, s, 28);
       primaryDark = hslToHex(h, s, 18);
-      primaryContrastText = "#001B3E";
+      primaryContrastText =
+        preset === "pine"
+          ? "#003826"
+          : preset === "nordic"
+          ? "#053350"
+          : preset === "berry"
+          ? "#441c42"
+          : "#002E69";
 
       secondaryMain = hslToHex(h, 18, 76);
       secondaryLight = hslToHex(h, 20, 26);
@@ -99,7 +106,7 @@ export function buildM3Theme(options: BuildThemeOptions = {}): Theme {
       primaryMain = hslToHex(h, Math.max(s, 45), 76);
       primaryLight = hslToHex(h, s, 28);
       primaryDark = hslToHex(h, s, 18);
-      primaryContrastText = "#001B3E";
+      primaryContrastText = hslToHex(h, s, 14);
 
       secondaryMain = hslToHex(h, 18, 76);
       secondaryLight = hslToHex(h, 20, 26);
@@ -135,22 +142,26 @@ export function buildM3Theme(options: BuildThemeOptions = {}): Theme {
       },
       error: {
         main: isDark ? "#FFB4AB" : "#BA1A1A",
-        light: isDark ? "#690005" : "#FFDAD6",
-        contrastText: isDark ? "#690005" : "#FFFFFF",
+        light: isDark ? "rgba(255, 180, 171, 0.16)" : "#FFDAD6",
+        dark: isDark ? "#FF5449" : "#93000A",
+        contrastText: isDark ? "#410002" : "#FFFFFF",
       },
       warning: {
         main: isDark ? "#FFBA28" : "#9A6B00",
-        light: isDark ? "#523600" : "#FFE08A",
-        contrastText: isDark ? "#432C00" : "#FFFFFF",
+        light: isDark ? "rgba(255, 186, 40, 0.16)" : "#FFF8E1",
+        dark: isDark ? "#FFD088" : "#7A4E00",
+        contrastText: isDark ? "#2A1800" : "#FFFFFF",
       },
       success: {
         main: isDark ? "#7BD78D" : "#1E6C30",
-        light: isDark ? "#00531E" : "#C6F2C6",
+        light: isDark ? "rgba(123, 215, 141, 0.16)" : "#E8F5E9",
+        dark: isDark ? "#9EF2AE" : "#00531E",
         contrastText: isDark ? "#003913" : "#FFFFFF",
       },
       info: {
         main: isDark ? "#7BD0FF" : "#006399",
-        light: isDark ? "#004B76" : "#C3E8FF",
+        light: isDark ? "rgba(123, 208, 255, 0.16)" : "#E7F0FF",
+        dark: isDark ? "#A6DCFF" : "#004B76",
         contrastText: isDark ? "#003453" : "#FFFFFF",
       },
       background: {
@@ -234,6 +245,63 @@ export function buildM3Theme(options: BuildThemeOptions = {}): Theme {
             backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : surfaceContainer,
             color: textSecondary,
             fontWeight: 700,
+          },
+        },
+      },
+      MuiAlert: {
+        styleOverrides: {
+          root: ({ ownerState }) => ({
+            borderRadius: 10,
+            border: "1px solid",
+            fontSize: "0.875rem",
+            ...(ownerState.severity === "error" && {
+              backgroundColor: isDark ? "rgba(255, 180, 171, 0.14)" : "#FFDAD6",
+              color: isDark ? "#FFB4AB" : "#410002",
+              borderColor: isDark ? "rgba(255, 180, 171, 0.3)" : "rgba(186, 26, 26, 0.2)",
+              "& .MuiAlert-icon": {
+                color: isDark ? "#FFB4AB" : "#BA1A1A",
+              },
+            }),
+            ...(ownerState.severity === "warning" && {
+              backgroundColor: isDark ? "rgba(255, 186, 40, 0.14)" : "#FFF8E1",
+              color: isDark ? "#FFBA28" : "#523600",
+              borderColor: isDark ? "rgba(255, 186, 40, 0.3)" : "rgba(154, 107, 0, 0.2)",
+              "& .MuiAlert-icon": {
+                color: isDark ? "#FFBA28" : "#9A6B00",
+              },
+            }),
+            ...(ownerState.severity === "success" && {
+              backgroundColor: isDark ? "rgba(123, 215, 141, 0.14)" : "#E8F5E9",
+              color: isDark ? "#7BD78D" : "#0F5132",
+              borderColor: isDark ? "rgba(123, 215, 141, 0.3)" : "rgba(30, 108, 48, 0.2)",
+              "& .MuiAlert-icon": {
+                color: isDark ? "#7BD78D" : "#1E6C30",
+              },
+            }),
+            ...(ownerState.severity === "info" && {
+              backgroundColor: isDark ? "rgba(123, 208, 255, 0.14)" : "#E7F0FF",
+              color: isDark ? "#7BD0FF" : "#003453",
+              borderColor: isDark ? "rgba(123, 208, 255, 0.3)" : "rgba(0, 99, 153, 0.2)",
+              "& .MuiAlert-icon": {
+                color: isDark ? "#7BD0FF" : "#006399",
+              },
+            }),
+          }),
+        },
+      },
+      MuiOutlinedInput: {
+        styleOverrides: {
+          root: {
+            borderRadius: 10,
+            "& .MuiOutlinedInput-notchedOutline": {
+              borderColor: isDark ? "rgba(255, 255, 255, 0.18)" : "rgba(0, 0, 0, 0.18)",
+            },
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: primaryMain,
+            },
+            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+              borderColor: primaryMain,
+            },
           },
         },
       },

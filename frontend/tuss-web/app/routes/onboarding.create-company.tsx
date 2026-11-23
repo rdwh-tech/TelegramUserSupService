@@ -68,7 +68,7 @@ export default function OnboardingCreateCompanyRoute() {
               width: 56,
               height: 56,
               borderRadius: "12px",
-              backgroundColor: "rgba(0, 90, 193, 0.08)",
+              backgroundColor: (theme) => `${theme.palette.primary.main}18`,
               color: "primary.main",
               display: "flex",
               alignItems: "center",

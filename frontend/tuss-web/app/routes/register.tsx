@@ -134,11 +134,21 @@ export default function RegisterRoute() {
           width: "100%",
           maxWidth: 480,
           p: { xs: 2.5, sm: 4 },
-          background: "rgba(255, 255, 255, 0.88)",
+          bgcolor: (theme) =>
+            theme.palette.mode === "dark"
+              ? "rgba(28, 33, 40, 0.9)"
+              : "rgba(255, 255, 255, 0.9)",
           backdropFilter: "blur(20px)",
-          boxShadow: "0 16px 40px -12px rgba(0, 45, 110, 0.08), 0 2px 6px rgba(0, 0, 0, 0.02)",
-          borderRadius: 2,
-          border: "1px solid rgba(255, 255, 255, 0.85)",
+          boxShadow: (theme) =>
+            theme.palette.mode === "dark"
+              ? "0 16px 40px rgba(0, 0, 0, 0.6)"
+              : "0 16px 40px -12px rgba(0, 45, 110, 0.08), 0 2px 6px rgba(0, 0, 0, 0.02)",
+          borderRadius: 2.5,
+          border: "1px solid",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark"
+              ? "rgba(255, 255, 255, 0.12)"
+              : "rgba(255, 255, 255, 0.85)",
         }}
       >
         <CardContent sx={{ p: 0 }}>
@@ -157,13 +167,14 @@ export default function RegisterRoute() {
                 width: 50,
                 height: 50,
                 borderRadius: "12px",
-                background: "linear-gradient(135deg, #005AC1 0%, #1E78E9 100%)",
-                color: "#FFFFFF",
+                background: (theme) =>
+                  `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                color: (theme) => theme.palette.primary.contrastText,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 mb: 1.5,
-                boxShadow: "0 8px 20px rgba(0, 90, 193, 0.22)",
+                boxShadow: (theme) => `0 8px 20px ${theme.palette.primary.main}33`,
               }}
             >
               <M3Icon name="person_add" size={26} />
@@ -406,13 +417,23 @@ export default function RegisterRoute() {
             <Link
               to="/login"
               style={{
-                color: "#005AC1",
+                color: "inherit",
                 textDecoration: "none",
                 fontWeight: 600,
                 fontSize: "0.875rem",
               }}
             >
-              Войти
+              <Typography
+                component="span"
+                sx={{
+                  color: "primary.main",
+                  fontWeight: 600,
+                  fontSize: "0.875rem",
+                  "&:hover": { textDecoration: "underline" },
+                }}
+              >
+                Войти
+              </Typography>
             </Link>
           </Stack>
         </CardContent>

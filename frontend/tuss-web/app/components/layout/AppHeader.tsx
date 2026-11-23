@@ -109,12 +109,13 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                   width: 34,
                   height: 34,
                   borderRadius: "10px",
-                  background: "linear-gradient(135deg, #005AC1 0%, #1E78E9 100%)",
-                  color: "#FFFFFF",
+                  background: (theme) =>
+                    `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                  color: (theme) => theme.palette.primary.contrastText,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  boxShadow: "0 2px 8px rgba(0, 90, 193, 0.25)",
+                  boxShadow: (theme) => `0 2px 8px ${theme.palette.primary.main}40`,
                 }}
               >
                 <M3Icon name="support_agent" size={20} />
@@ -142,12 +143,13 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 width: 34,
                 height: 34,
                 borderRadius: "10px",
-                background: "linear-gradient(135deg, #005AC1 0%, #1E78E9 100%)",
-                color: "#FFFFFF",
+                background: (theme) =>
+                  `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                color: (theme) => theme.palette.primary.contrastText,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 2px 8px rgba(0, 90, 193, 0.25)",
+                boxShadow: (theme) => `0 2px 8px ${theme.palette.primary.main}40`,
               }}
             >
               <M3Icon name="support_agent" size={20} />
