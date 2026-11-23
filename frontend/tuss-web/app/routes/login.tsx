@@ -84,7 +84,7 @@ export default function LoginRoute() {
         navigate("/");
       }
     } catch (err: any) {
-      const msg = err.message || "";
+      const msg = err?.response?.data?.message || err.message || "";
       if (
         msg.includes("INVALID_CREDENTIALS") ||
         msg.includes("Неверный логин") ||

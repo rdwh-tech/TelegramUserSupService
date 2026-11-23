@@ -107,8 +107,10 @@ export default function RegisterRoute() {
         navigate("/onboarding/invite-code");
       }
     } catch (err: any) {
-      const msg = err.message || "";
+      const serverCode = err?.response?.data?.code || "";
+      const msg = err?.response?.data?.message || err.message || "";
       if (
+        serverCode === "LOGIN_ALREADY_EXISTS" ||
         msg.includes("LOGIN_ALREADY_EXISTS") ||
         msg.includes("уже используется") ||
         msg.includes("занят")
