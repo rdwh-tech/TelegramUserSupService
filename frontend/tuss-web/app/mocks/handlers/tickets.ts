@@ -24,6 +24,13 @@ export const ticketsHandlers = [
     return HttpResponse.json(l2Tickets);
   }),
 
+  // Архив закрытых тикетов (FR-API-3, [TUSS-FE-16])
+  http.get("*/api/tickets/archive", async () => {
+    await delay(250);
+    const closedTickets = mockTickets.filter((t) => t.status === "closed");
+    return HttpResponse.json(closedTickets);
+  }),
+
   // Мой активный тикет ("в одни руки") (FR-WEB-8)
   http.get("*/api/tickets/my-active", async () => {
     await delay(200);

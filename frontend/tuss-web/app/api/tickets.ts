@@ -20,6 +20,12 @@ export const ticketsApi = {
     return data;
   },
 
+  // Архив закрытых тикетов (FR-API-3, [TUSS-FE-16])
+  async getArchivedTickets(): Promise<Ticket[]> {
+    const { data } = await apiClient.get<Ticket[]>("/tickets/archive");
+    return data;
+  },
+
   // Активный тикет текущего оператора ("в одни руки")
   async getMyActiveTicket(): Promise<Ticket | null> {
     const { data } = await apiClient.get<Ticket | null>("/tickets/my-active");
