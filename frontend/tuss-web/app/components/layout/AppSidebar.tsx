@@ -79,21 +79,24 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen }) => {
   const navItems = getNavItems();
 
   const renderNavList = (items: NavItemConfig[]) => (
-    <List sx={{ p: 1, display: "flex", flexDirection: "column", gap: 0.5 }}>
+    <List sx={{ px: isOpen ? 1 : 0, py: 1, display: "flex", flexDirection: "column", gap: 0.5, alignItems: "center", width: "100%" }}>
       {items.map((item) => (
-        <ListItem key={item.to} disablePadding sx={{ display: "block" }}>
+        <ListItem key={item.to} disablePadding sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
           <NavLink
             to={item.to}
-            style={{ textDecoration: "none", display: "block", color: "inherit" }}
+            style={{ textDecoration: "none", display: "flex", justifyContent: "center", width: isOpen ? "100%" : "auto", color: "inherit" }}
           >
             {({ isActive }) => {
               const buttonContent = (
                 <ListItemButton
                   sx={{
                     minHeight: 44,
+                    height: 44,
+                    width: isOpen ? "100%" : 44,
                     borderRadius: 3,
-                    px: isOpen ? 2 : 1.5,
+                    px: isOpen ? 2 : 0,
                     justifyContent: isOpen ? "initial" : "center",
+                    alignItems: "center",
                     backgroundColor: isActive ? "rgba(0, 90, 193, 0.12)" : "transparent",
                     color: isActive ? "primary.main" : "text.secondary",
                     fontWeight: isActive ? 600 : 500,
@@ -109,8 +112,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen }) => {
                   <ListItemIcon
                     sx={{
                       minWidth: 0,
-                      mr: isOpen ? 2 : "auto",
+                      mr: isOpen ? 2 : 0,
                       justifyContent: "center",
+                      alignItems: "center",
                       color: isActive ? "primary.main" : "inherit",
                     }}
                   >
@@ -177,8 +181,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen }) => {
 
         {/* Дополнительный блок аудита для администратора */}
         {navItems.audit && (
-          <>
-            <Divider sx={{ my: 1, mx: 2 }} />
+          <Box sx={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <Divider sx={{ my: 1, width: isOpen ? "calc(100% - 32px)" : 44 }} />
             {isOpen && (
               <Typography
                 variant="caption"
@@ -191,13 +195,14 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen }) => {
                   textTransform: "uppercase",
                   fontSize: "0.65rem",
                   letterSpacing: "0.05em",
+                  width: "100%",
                 }}
               >
                 Мониторинг
               </Typography>
             )}
             {renderNavList(navItems.audit)}
-          </>
+          </Box>
         )}
       </Box>
 

@@ -70,53 +70,100 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         backgroundColor: "background.paper",
         borderBottom: "1px solid",
         borderColor: "divider",
-        px: { xs: 2, sm: 3 },
+        pl: 0,
+        pr: { xs: 2, sm: 3 },
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         backdropFilter: "blur(12px)",
       }}
     >
-      {/* Левая часть: кнопка меню, логотип и тег компании */}
-      <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-        <IconButton
-          onClick={onToggleSidebar}
-          edge="start"
-          aria-label={sidebarOpen ? "свернуть меню" : "развернуть меню"}
-          size="medium"
-          sx={{ color: "text.primary" }}
+      {/* Левая часть: кнопка меню (выровнена с 72px/240px сайдбаром), логотип и тег компании */}
+      <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+        <Box
+          sx={{
+            width: sidebarOpen ? 240 : 72,
+            transition: "width 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: sidebarOpen ? "flex-start" : "center",
+            px: sidebarOpen ? 2.5 : 0,
+            flexShrink: 0,
+            gap: 1.5,
+          }}
         >
-          <M3Icon name={sidebarOpen ? "menu_open" : "menu"} size={24} />
-        </IconButton>
+          <IconButton
+            onClick={onToggleSidebar}
+            aria-label={sidebarOpen ? "свернуть меню" : "развернуть меню"}
+            size="medium"
+            sx={{ color: "text.primary" }}
+          >
+            <M3Icon name={sidebarOpen ? "menu_open" : "menu"} size={24} />
+          </IconButton>
 
-        <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-          <Box
-            sx={{
-              width: 34,
-              height: 34,
-              borderRadius: "10px",
-              background: "linear-gradient(135deg, #005AC1 0%, #1E78E9 100%)",
-              color: "#FFFFFF",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 2px 8px rgba(0, 90, 193, 0.25)",
-            }}
-          >
-            <M3Icon name="support_agent" size={20} />
-          </Box>
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 700,
-              letterSpacing: "-0.01em",
-              color: "text.primary",
-              fontSize: { xs: "1.05rem", sm: "1.2rem" },
-            }}
-          >
-            TUSS
-          </Typography>
-        </Stack>
+          {sidebarOpen && (
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+              <Box
+                sx={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: "10px",
+                  background: "linear-gradient(135deg, #005AC1 0%, #1E78E9 100%)",
+                  color: "#FFFFFF",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 2px 8px rgba(0, 90, 193, 0.25)",
+                }}
+              >
+                <M3Icon name="support_agent" size={20} />
+              </Box>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 700,
+                  letterSpacing: "-0.01em",
+                  color: "text.primary",
+                  fontSize: { xs: "1.05rem", sm: "1.2rem" },
+                }}
+              >
+                TUSS
+              </Typography>
+            </Stack>
+          )}
+        </Box>
+
+        {/* Если меню свернуто — логотип отображается в рабочей области шапки */}
+        {!sidebarOpen && (
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", pl: 1 }}>
+            <Box
+              sx={{
+                width: 34,
+                height: 34,
+                borderRadius: "10px",
+                background: "linear-gradient(135deg, #005AC1 0%, #1E78E9 100%)",
+                color: "#FFFFFF",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 2px 8px rgba(0, 90, 193, 0.25)",
+              }}
+            >
+              <M3Icon name="support_agent" size={20} />
+            </Box>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 700,
+                letterSpacing: "-0.01em",
+                color: "text.primary",
+                fontSize: { xs: "1.05rem", sm: "1.2rem" },
+              }}
+            >
+              TUSS
+            </Typography>
+          </Stack>
+        )}
 
         {/* Текущая компания (SRS 4.1.2) */}
         {user?.companyId ? (
