@@ -107,13 +107,23 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           borderRadius: 2,
           borderTopRightRadius: isOperator ? 0.5 : 2,
           borderTopLeftRadius: !isOperator ? 0.5 : 2,
-          bgcolor: isOperator ? "#D8E2FF" : "#FFFFFF",
-          color: isOperator ? "#001A41" : "text.primary",
-          border: isOperator ? "none" : "1px solid rgba(196, 198, 208, 0.4)",
+          bgcolor: isOperator
+            ? (theme) => (theme.palette.mode === "dark" ? `${theme.palette.primary.main}33` : theme.palette.primary.light)
+            : "background.paper",
+          color: isOperator
+            ? (theme) => (theme.palette.mode === "dark" ? "#FFFFFF" : "#001A41")
+            : "text.primary",
+          border: isOperator ? "none" : "1px solid",
+          borderColor: "divider",
           boxShadow: isOperator
-            ? "0 1px 4px rgba(0, 90, 193, 0.12)"
+            ? (theme) => `0 1px 4px ${theme.palette.primary.main}22`
             : "0 1px 4px rgba(0, 0, 0, 0.05)",
           wordBreak: "break-word",
+          animation: "msgFadeIn 0.18s ease-out",
+          "@keyframes msgFadeIn": {
+            from: { opacity: 0, transform: "translateY(4px)" },
+            to: { opacity: 1, transform: "translateY(0)" },
+          },
         }}
       >
         {/* Вложения (если есть) */}

@@ -272,7 +272,9 @@ export default function TicketDetailsRoute() {
               p: 8,
               textAlign: "center",
               borderRadius: 2,
-              border: "1px solid rgba(196, 198, 208, 0.4)",
+              border: "1px solid",
+              borderColor: "divider",
+              bgcolor: "background.paper",
             }}
           >
             <CircularProgress size={40} thickness={4} />
@@ -298,8 +300,9 @@ export default function TicketDetailsRoute() {
                 flex: 1,
                 minWidth: 0,
                 borderRadius: 2,
-                border: "1px solid rgba(196, 198, 208, 0.4)",
-                bgcolor: "#FFFFFF",
+                border: "1px solid",
+                borderColor: "divider",
+                bgcolor: "background.paper",
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",
@@ -311,8 +314,9 @@ export default function TicketDetailsRoute() {
                 sx={{
                   px: 3,
                   py: 2,
-                  bgcolor: "#F8F9FE",
-                  borderBottom: "1px solid rgba(196, 198, 208, 0.4)",
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "#F8F9FE"),
+                  borderBottom: "1px solid",
+                  borderColor: "divider",
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",

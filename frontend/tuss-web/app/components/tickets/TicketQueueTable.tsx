@@ -53,14 +53,15 @@ export const TicketQueueTable: React.FC<TicketQueueTableProps> = ({
         data-testid="queue-skeleton-loading"
         sx={{
           borderRadius: 2,
-          border: "1px solid rgba(196, 198, 208, 0.4)",
+          border: "1px solid",
+          borderColor: "divider",
           overflow: "hidden",
-          bgcolor: "#FFFFFF",
+          bgcolor: "background.paper",
         }}
       >
         <TableContainer>
           <Table>
-            <TableHead sx={{ bgcolor: "#F8F9FE" }}>
+            <TableHead>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, width: 110 }}>№ Тикета</TableCell>
                 <TableCell sx={{ fontWeight: 700, width: 220 }}>Клиент</TableCell>
@@ -123,8 +124,9 @@ export const TicketQueueTable: React.FC<TicketQueueTableProps> = ({
           px: 3,
           textAlign: "center",
           borderRadius: 2,
-          border: "1px dashed rgba(196, 198, 208, 0.8)",
-          bgcolor: "#F8F9FE",
+          border: "1px dashed",
+          borderColor: "divider",
+          bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "#F8F9FE"),
         }}
       >
         <Box
@@ -132,7 +134,7 @@ export const TicketQueueTable: React.FC<TicketQueueTableProps> = ({
             width: 64,
             height: 64,
             borderRadius: "50%",
-            bgcolor: "#E7F0FF",
+            bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#E7F0FF"),
             color: "primary.main",
             display: "flex",
             alignItems: "center",
@@ -159,15 +161,16 @@ export const TicketQueueTable: React.FC<TicketQueueTableProps> = ({
       data-testid="queue-table"
       sx={{
         borderRadius: 2,
-        border: "1px solid rgba(196, 198, 208, 0.4)",
+        border: "1px solid",
+        borderColor: "divider",
         overflow: "hidden",
-        bgcolor: "#FFFFFF",
+        bgcolor: "background.paper",
         boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
       }}
     >
       <TableContainer>
         <Table sx={{ minWidth: 700 }}>
-          <TableHead sx={{ bgcolor: "#F8F9FE" }}>
+          <TableHead>
             <TableRow>
               <TableCell sx={{ fontWeight: 700, color: "text.secondary", width: 110 }}>
                 № Тикета

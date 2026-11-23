@@ -62,8 +62,9 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
         width: { xs: "100%", md: 340 },
         flexShrink: 0,
         borderRadius: 2,
-        border: "1px solid rgba(196, 198, 208, 0.4)",
-        bgcolor: "#FFFFFF",
+        border: "1px solid",
+        borderColor: "divider",
+        bgcolor: "background.paper",
         p: 2.5,
         display: "flex",
         flexDirection: "column",
@@ -142,7 +143,15 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
           </Box>
         </Stack>
 
-        <Stack spacing={0.75} sx={{ mt: 2, bgcolor: "#F8F9FE", p: 1.5, borderRadius: 1.5 }}>
+        <Stack
+          spacing={0.75}
+          sx={{
+            mt: 2,
+            bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "#F8F9FE"),
+            p: 1.5,
+            borderRadius: 1.5,
+          }}
+        >
           <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
             <Typography variant="caption" color="text.secondary">
               ID пользователя:
@@ -228,12 +237,13 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
             sx={{
               p: 1.5,
               borderRadius: 1.5,
-              bgcolor: "#F1F8F3",
-              border: "1px solid #D1E7DD",
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(46, 125, 50, 0.15)" : "#F1F8F3"),
+              border: "1px solid",
+              borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(46, 125, 50, 0.3)" : "#D1E7DD"),
               textAlign: "center",
             }}
           >
-            <Typography variant="caption" sx={{ fontWeight: 700, color: "#0F5132", display: "block" }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, color: (theme) => (theme.palette.mode === "dark" ? "#7BD78D" : "#0F5132"), display: "block" }}>
               Тикет завершен
             </Typography>
             <Typography variant="caption" color="text.secondary">
@@ -246,8 +256,9 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
             sx={{
               p: 1.5,
               borderRadius: 1.5,
-              bgcolor: "#F8F9FE",
-              border: "1px solid rgba(196, 198, 208, 0.4)",
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "#F8F9FE"),
+              border: "1px solid",
+              borderColor: "divider",
               textAlign: "center",
             }}
           >

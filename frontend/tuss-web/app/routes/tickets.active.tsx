@@ -90,13 +90,21 @@ export default function TicketsActiveRoute() {
           <Card
             sx={{
               borderRadius: 2,
-              border: "1px solid rgba(196, 198, 208, 0.4)",
-              bgcolor: "#FFFFFF",
+              border: "1px solid",
+              borderColor: "divider",
+              bgcolor: "background.paper",
               overflow: "hidden",
               boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06)",
             }}
           >
-            <Box sx={{ p: 3, bgcolor: "#F8F9FE", borderBottom: "1px solid", borderColor: "divider" }}>
+            <Box
+              sx={{
+                p: 3,
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "#F8F9FE"),
+                borderBottom: "1px solid",
+                borderColor: "divider",
+              }}
+            >
               <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
                 <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
                   <Avatar sx={{ bgcolor: "primary.main", color: "#fff", fontWeight: 700 }}>
@@ -127,8 +135,9 @@ export default function TicketsActiveRoute() {
                 sx={{
                   p: 2,
                   borderRadius: 1.5,
-                  bgcolor: "#F1F4FB",
-                  border: "1px solid rgba(196, 198, 208, 0.4)",
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#F1F4FB"),
+                  border: "1px solid",
+                  borderColor: "divider",
                   mb: 3,
                 }}
               >
@@ -165,7 +174,7 @@ export default function TicketsActiveRoute() {
               borderRadius: 2,
               border: "1px solid",
               borderColor: "divider",
-              bgcolor: "#FFFFFF",
+              bgcolor: "background.paper",
             }}
           >
             <CardContent>

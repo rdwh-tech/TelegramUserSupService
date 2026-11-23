@@ -163,9 +163,12 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
               data-testid="attach-file-button"
               sx={{
                 p: 1.25,
-                bgcolor: "#F8F9FE",
-                border: "1px solid rgba(196, 198, 208, 0.4)",
-                "&:hover": { bgcolor: "#E7EDFA" },
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#F8F9FE"),
+                border: "1px solid",
+                borderColor: "divider",
+                "&:hover": {
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "#E7EDFA"),
+                },
               }}
             >
               <M3Icon name="attach_file" size={20} />
@@ -194,7 +197,14 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           sx={{
             "& .MuiOutlinedInput-root": {
               borderRadius: 1.5,
-              bgcolor: disabled ? "#F8F9FE" : "#FAFAFD",
+              bgcolor: (theme) =>
+                disabled
+                  ? theme.palette.mode === "dark"
+                    ? "rgba(255, 255, 255, 0.04)"
+                    : "#F8F9FE"
+                  : theme.palette.mode === "dark"
+                  ? "rgba(255, 255, 255, 0.07)"
+                  : "#FAFAFD",
               fontSize: "0.9375rem",
             },
           }}

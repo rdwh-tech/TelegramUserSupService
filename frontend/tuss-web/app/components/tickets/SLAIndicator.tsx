@@ -140,6 +140,19 @@ export const SLAIndicator: React.FC<SLAIndicatorProps> = ({ sla, label, showDeta
           whiteSpace: "nowrap",
           cursor: "default",
           transition: "all 0.2s ease-in-out",
+          animation: effectiveStatus === "breached"
+            ? "slaBreachPulse 2s infinite ease-in-out"
+            : effectiveStatus === "warning"
+            ? "slaWarnPulse 3s infinite ease-in-out"
+            : "none",
+          "@keyframes slaBreachPulse": {
+            "0%, 100%": { opacity: 1, transform: "scale(1)" },
+            "50%": { opacity: 0.88, transform: "scale(1.02)" },
+          },
+          "@keyframes slaWarnPulse": {
+            "0%, 100%": { opacity: 1 },
+            "50%": { opacity: 0.92 },
+          },
         }}
       >
         <M3Icon name={config.icon} size={16} />
