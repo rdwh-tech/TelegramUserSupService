@@ -194,9 +194,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen }) => {
                   display: "block",
                   color: "text.secondary",
                   fontWeight: 600,
-                  textTransform: "uppercase",
-                  fontSize: "0.65rem",
-                  letterSpacing: "0.05em",
+                  fontSize: "0.75rem",
                   width: "100%",
                 }}
               >

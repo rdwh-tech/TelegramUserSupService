@@ -106,16 +106,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
               <Box
                 sx={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: "10px",
-                  background: (theme) =>
-                    `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                  color: (theme) => theme.palette.primary.contrastText,
+                  width: 32,
+                  height: 32,
+                  borderRadius: 1,
+                  bgcolor: "primary.main",
+                  color: "primary.contrastText",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  boxShadow: (theme) => `0 2px 8px ${theme.palette.primary.main}40`,
                 }}
               >
                 <M3Icon name="support_agent" size={20} />
@@ -123,7 +121,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               <Typography
                 variant="h6"
                 sx={{
-                  fontWeight: 700,
+                  fontWeight: 600,
                   letterSpacing: "-0.01em",
                   color: "text.primary",
                   fontSize: { xs: "1.05rem", sm: "1.2rem" },
@@ -140,16 +138,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", pl: 1 }}>
             <Box
               sx={{
-                width: 34,
-                height: 34,
-                borderRadius: "10px",
-                background: (theme) =>
-                  `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                color: (theme) => theme.palette.primary.contrastText,
+                width: 32,
+                height: 32,
+                borderRadius: 1,
+                bgcolor: "primary.main",
+                color: "primary.contrastText",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: (theme) => `0 2px 8px ${theme.palette.primary.main}40`,
               }}
             >
               <M3Icon name="support_agent" size={20} />
@@ -157,7 +153,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <Typography
               variant="h6"
               sx={{
-                fontWeight: 700,
+                fontWeight: 600,
                 letterSpacing: "-0.01em",
                 color: "text.primary",
                 fontSize: { xs: "1.05rem", sm: "1.2rem" },
@@ -208,19 +204,20 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             spacing={0.8}
             sx={{
               alignItems: "center",
-              px: 1.5,
-              py: 0.5,
-              borderRadius: 9999,
+              px: 1.25,
+              py: 0.4,
+              borderRadius: 1,
+              border: "1px solid",
+              borderColor: isConnected ? "rgba(46, 125, 50, 0.25)" : "rgba(211, 47, 47, 0.25)",
               backgroundColor: isConnected ? "rgba(46, 125, 50, 0.08)" : "rgba(211, 47, 47, 0.08)",
             }}
           >
             <Box
               sx={{
-                width: 8,
-                height: 8,
+                width: 7,
+                height: 7,
                 borderRadius: "50%",
                 backgroundColor: isConnected ? "#2E7D32" : "#D32F2F",
-                boxShadow: isConnected ? "0 0 8px rgba(46, 125, 50, 0.6)" : "none",
               }}
             />
             <Typography

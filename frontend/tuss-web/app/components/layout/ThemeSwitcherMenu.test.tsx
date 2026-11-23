@@ -33,7 +33,7 @@ describe("ThemeSwitcherMenu Component", () => {
     // Open popover
     fireEvent.click(screen.getByTestId("theme-palette-menu-button"));
 
-    expect(screen.getByText("Оформление интерфейса (Material 3)")).toBeInTheDocument();
+    expect(screen.getByText("Оформление интерфейса")).toBeInTheDocument();
     expect(screen.getByTestId("preset-select-pine")).toBeInTheDocument();
     expect(screen.getByTestId("preset-select-nordic")).toBeInTheDocument();
     expect(screen.getByTestId("preset-select-berry")).toBeInTheDocument();

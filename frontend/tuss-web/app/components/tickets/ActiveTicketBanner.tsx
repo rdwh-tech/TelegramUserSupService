@@ -59,7 +59,7 @@ export const ActiveTicketBanner: React.FC<ActiveTicketBannerProps> = ({ activeTi
           <Typography
             variant="subtitle2"
             sx={{
-              fontWeight: 800,
+              fontWeight: 600,
               color: (theme) =>
                 theme.palette.mode === "dark" ? "warning.main" : "#7A4E00",
             }}

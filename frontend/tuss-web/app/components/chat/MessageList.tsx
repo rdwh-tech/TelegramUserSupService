@@ -140,9 +140,9 @@ export const MessageList: React.FC<MessageListProps> = ({
                 bgcolor: (theme) =>
                   theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#F1F4FB",
                 color: "text.secondary",
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: "0.75rem",
-                borderRadius: 9999,
+                borderRadius: 1,
                 border: "1px solid",
                 borderColor: (theme) =>
                   theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.15)" : "divider",

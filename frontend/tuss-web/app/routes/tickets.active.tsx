@@ -71,7 +71,7 @@ export default function TicketsActiveRoute() {
           }}
         >
           <div>
-            <Typography variant="h5" sx={{ fontWeight: 800 }}>
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
               Мой активный тикет
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -107,11 +107,11 @@ export default function TicketsActiveRoute() {
             >
               <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
                 <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-                  <Avatar sx={{ bgcolor: "primary.main", color: "#fff", fontWeight: 700 }}>
+                  <Avatar sx={{ bgcolor: "primary.main", color: "#fff", fontWeight: 600 }}>
                     {activeTicket.client.fullName?.[0] || "U"}
                   </Avatar>
                   <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary" }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: "text.primary" }}>
                       Тикет #{activeTicket.ticketNumber} — {activeTicket.client.fullName}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">

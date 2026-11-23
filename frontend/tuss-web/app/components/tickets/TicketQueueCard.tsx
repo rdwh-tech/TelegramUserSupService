@@ -49,9 +49,10 @@ const pillStyle = (colorType: "teal" | "amber" | "blue" | "purple" | "grey") => 
   gap: 0.5,
   px: 1,
   py: 0.35,
-  borderRadius: 9999,
+  borderRadius: 1.5,
   fontSize: "0.725rem",
   fontWeight: 600,
+  fontVariantNumeric: "tabular-nums",
   lineHeight: 1.2,
   border: "1px solid",
   ...(colorType === "teal" && {
@@ -120,7 +121,7 @@ export const TicketQueueCard: React.FC<TicketQueueCardProps> = ({
       data-testid={`ticket-card-${ticket.id}`}
       sx={{
         p: 2,
-        borderRadius: 2.5,
+        borderRadius: 2,
         border: "1px solid",
         borderColor: "divider",
         bgcolor: "background.paper",
@@ -128,18 +129,12 @@ export const TicketQueueCard: React.FC<TicketQueueCardProps> = ({
         flexDirection: "column",
         justifyContent: "space-between",
         height: "100%",
-        boxShadow: (theme) =>
-          theme.palette.mode === "dark"
-            ? "0 2px 8px rgba(0, 0, 0, 0.25)"
-            : "0 1px 4px rgba(0, 0, 0, 0.05)",
-        transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
+        boxShadow: "none",
+        transition: "border-color 0.15s ease, background-color 0.15s ease",
         "&:hover": {
-          transform: "translateY(-2px)",
-          boxShadow: (theme) =>
-            theme.palette.mode === "dark"
-              ? "0 8px 24px rgba(0, 0, 0, 0.45)"
-              : "0 8px 24px rgba(0, 45, 110, 0.08)",
           borderColor: "primary.main",
+          bgcolor: (theme) =>
+            theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "#FAFAFC",
         },
       }}
     >
@@ -168,7 +163,7 @@ export const TicketQueueCard: React.FC<TicketQueueCardProps> = ({
             <Typography
               variant="subtitle2"
               sx={{
-                fontWeight: 700,
+                fontWeight: 600,
                 color: "text.primary",
                 fontSize: "0.9rem",
                 display: "flex",
@@ -182,7 +177,7 @@ export const TicketQueueCard: React.FC<TicketQueueCardProps> = ({
                 component="span"
                 sx={{
                   color: "primary.main",
-                  fontWeight: 800,
+                  fontWeight: 600,
                   flexShrink: 0,
                 }}
               >
@@ -195,7 +190,7 @@ export const TicketQueueCard: React.FC<TicketQueueCardProps> = ({
                 component="span"
                 sx={{
                   color: "text.primary",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -308,7 +303,7 @@ export const TicketQueueCard: React.FC<TicketQueueCardProps> = ({
           >
             <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 0.25, color: "#9E3C00" }}>
               <M3Icon name="call_made" size={14} />
-              <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", fontSize: "0.7rem" }}>
+              <Typography variant="caption" sx={{ fontWeight: 600, fontSize: "0.75rem" }}>
                 Причина эскалации
               </Typography>
             </Stack>
@@ -344,7 +339,7 @@ export const TicketQueueCard: React.FC<TicketQueueCardProps> = ({
               height: 32,
               bgcolor: "primary.light",
               color: "primary.main",
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: "0.8rem",
               flexShrink: 0,
             }}

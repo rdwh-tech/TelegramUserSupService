@@ -191,11 +191,11 @@ export function buildM3Theme(options: BuildThemeOptions = {}): Theme {
         },
         styleOverrides: {
           root: {
-            borderRadius: 9999,
+            borderRadius: 8,
             padding: buttonPadding,
             fontSize: buttonFontSize,
             fontWeight: 600,
-            transition: "all 0.15s ease-in-out",
+            transition: "background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease",
           },
         },
       },
@@ -244,7 +244,7 @@ export function buildM3Theme(options: BuildThemeOptions = {}): Theme {
           head: {
             backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : surfaceContainer,
             color: textSecondary,
-            fontWeight: 700,
+            fontWeight: 600,
           },
         },
       },

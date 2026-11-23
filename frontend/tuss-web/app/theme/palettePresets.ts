@@ -16,8 +16,8 @@ export interface PresetMeta {
 export const PRESET_CATALOG: Record<Exclude<ThemePreset, "custom">, PresetMeta> = {
   telegram: {
     id: "telegram",
-    name: "Telegram Classic",
-    description: "Насыщенный кобальт в стиле нативного Telegram Desktop",
+    name: "Синий (Telegram)",
+    description: "Классический синий акцент",
     seed: "#0077D6",
     primaryLight: "#005AC1",
     primaryDark: "#ADC6FF",
@@ -26,8 +26,8 @@ export const PRESET_CATALOG: Record<Exclude<ThemePreset, "custom">, PresetMeta> 
   },
   pine: {
     id: "pine",
-    name: "Pine & Sage",
-    description: "Успокаивающий хвойно-изумрудный тон, снижающий нагрузку на зрение",
+    name: "Изумрудный (Pine)",
+    description: "Хвойно-изумрудный акцент",
     seed: "#16694E",
     primaryLight: "#16694E",
     primaryDark: "#9DD4B7",
@@ -36,8 +36,8 @@ export const PRESET_CATALOG: Record<Exclude<ThemePreset, "custom">, PresetMeta> 
   },
   nordic: {
     id: "nordic",
-    name: "Nordic Slate",
-    description: "Сдержанный графитово-стальной тон терминалов и современных IDE",
+    name: "Графитовый (Nordic)",
+    description: "Графитово-стальной акцент",
     seed: "#3E5F7A",
     primaryLight: "#3E5F7A",
     primaryDark: "#A7C9EB",
@@ -46,8 +46,8 @@ export const PRESET_CATALOG: Record<Exclude<ThemePreset, "custom">, PresetMeta> 
   },
   berry: {
     id: "berry",
-    name: "Berry Dusk",
-    description: "Благородный сливово-индиговый акцент без кричащего неона",
+    name: "Сливовый (Berry)",
+    description: "Сливово-индиговый акцент",
     seed: "#764E74",
     primaryLight: "#764E74",
     primaryDark: "#E7B3E3",

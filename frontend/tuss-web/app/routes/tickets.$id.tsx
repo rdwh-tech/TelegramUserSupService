@@ -236,7 +236,7 @@ export default function TicketDetailsRoute() {
 
             {ticket && (
               <div>
-                <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary", lineHeight: 1.2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: "text.primary", lineHeight: 1.2 }}>
                   Обращение #{ticket.ticketNumber}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -324,7 +324,7 @@ export default function TicketDetailsRoute() {
               >
                 <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
                   <M3Icon name="chat" size={22} />
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                     Диалог с клиентом Telegram
                   </Typography>
                 </Stack>

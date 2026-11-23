@@ -138,7 +138,7 @@ export default function TicketsArchiveRoute() {
           }}
         >
           <div>
-            <Typography variant="h5" sx={{ fontWeight: 800 }}>
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
               Архив обращений
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -243,12 +243,12 @@ export default function TicketsArchiveRoute() {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 700, width: 110 }}>№ Тикета</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 220 }}>Клиент</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Первое сообщение</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 180 }}>Оператор</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 160 }}>Дата закрытия</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 130, textAlign: "right" }}>
+                    <TableCell sx={{ fontWeight: 600, width: 110 }}>№ Тикета</TableCell>
+                    <TableCell sx={{ fontWeight: 600, width: 220 }}>Клиент</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Первое сообщение</TableCell>
+                    <TableCell sx={{ fontWeight: 600, width: 180 }}>Оператор</TableCell>
+                    <TableCell sx={{ fontWeight: 600, width: 160 }}>Дата закрытия</TableCell>
+                    <TableCell sx={{ fontWeight: 600, width: 130, textAlign: "right" }}>
                       Действие
                     </TableCell>
                   </TableRow>
@@ -272,7 +272,7 @@ export default function TicketsArchiveRoute() {
                         <Skeleton variant="text" width={100} height={24} />
                       </TableCell>
                       <TableCell align="right">
-                        <Skeleton variant="rounded" width={90} height={32} sx={{ borderRadius: 9999, ml: "auto" }} />
+                        <Skeleton variant="rounded" width={90} height={32} sx={{ borderRadius: 1, ml: "auto" }} />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -336,22 +336,22 @@ export default function TicketsArchiveRoute() {
               <Table sx={{ minWidth: 700 }}>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", width: 110 }}>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary", width: 110 }}>
                       № Тикета
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", width: 220 }}>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary", width: 220 }}>
                       Клиент
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "text.secondary" }}>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary" }}>
                       Первое сообщение
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", width: 180 }}>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary", width: 180 }}>
                       Ответственный
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", width: 160 }}>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary", width: 160 }}>
                       Дата закрытия
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", width: 130, textAlign: "right" }}>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary", width: 130, textAlign: "right" }}>
                       Действие
                     </TableCell>
                   </TableRow>
@@ -377,7 +377,7 @@ export default function TicketsArchiveRoute() {
                         }}
                       >
                         {/* Номер */}
-                        <TableCell sx={{ fontWeight: 800, color: "text.secondary" }}>
+                        <TableCell sx={{ fontWeight: 600, color: "text.secondary" }}>
                           #{ticket.ticketNumber}
                         </TableCell>
 

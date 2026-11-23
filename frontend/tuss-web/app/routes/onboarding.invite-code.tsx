@@ -172,7 +172,7 @@ export default function OnboardingInviteCodeRoute() {
             <Typography
               variant="h4"
               sx={{
-                fontWeight: 800,
+                fontWeight: 700,
                 letterSpacing: "0.25em",
                 fontFamily: "monospace",
                 color: "primary.main",

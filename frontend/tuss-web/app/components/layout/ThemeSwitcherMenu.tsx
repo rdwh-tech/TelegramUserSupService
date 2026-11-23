@@ -116,29 +116,26 @@ export const ThemeSwitcherMenu: React.FC = () => {
           paper: {
             sx: {
               mt: 1.5,
-              width: 340,
-              p: 2.5,
-              borderRadius: 2,
+              width: 300,
+              p: 2,
+              borderRadius: 1.5,
               border: "1px solid",
               borderColor: "divider",
               boxShadow: (theme) =>
                 theme.palette.mode === "dark"
-                  ? "0 12px 32px rgba(0, 0, 0, 0.6)"
-                  : "0 12px 32px rgba(0, 45, 110, 0.1)",
+                  ? "0 8px 24px rgba(0, 0, 0, 0.45)"
+                  : "0 8px 24px rgba(0, 0, 0, 0.08)",
             },
           },
         }}
       >
-        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
-          Оформление интерфейса (Material 3)
-        </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
-          Динамическая генерация тональных поверхностей под ваш комфорт
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+          Оформление интерфейса
         </Typography>
 
-        {/* Секция: Тема оформления (День / Ночь / Авто) */}
-        <Box sx={{ mb: 2.5 }}>
-          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}>
+        {/* Секция: Режим темы */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", mb: 0.75, display: "block" }}>
             Режим темы
           </Typography>
           <ToggleButtonGroup
@@ -147,7 +144,6 @@ export const ThemeSwitcherMenu: React.FC = () => {
             onChange={(_, val) => val && setMode(val as ThemeMode)}
             size="small"
             fullWidth
-            sx={{ mt: 1 }}
           >
             <ToggleButton value="light" data-testid="mode-select-light">
               <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
@@ -170,14 +166,14 @@ export const ThemeSwitcherMenu: React.FC = () => {
           </ToggleButtonGroup>
         </Box>
 
-        <Divider sx={{ my: 2 }} />
+        <Divider sx={{ my: 1.5 }} />
 
         {/* Секция: Выбор палитры */}
-        <Box sx={{ mb: 2.5 }}>
-          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}>
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", mb: 0.75, display: "block" }}>
             Цветовая палитра
           </Typography>
-          <Stack spacing={1} sx={{ mt: 1 }}>
+          <Stack spacing={0.5}>
             {(Object.keys(PRESET_CATALOG) as Array<Exclude<ThemePreset, "custom">>).map((pKey) => {
               const meta = PRESET_CATALOG[pKey];
               const isSelected = preset === pKey;
@@ -190,93 +186,87 @@ export const ThemeSwitcherMenu: React.FC = () => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    p: 1.25,
-                    borderRadius: 1.5,
+                    px: 1.25,
+                    py: 0.75,
+                    borderRadius: 1,
                     cursor: "pointer",
-                    border: "1.5px solid",
-                    borderColor: isSelected ? meta.seed : "transparent",
                     bgcolor: isSelected
                       ? resolvedMode === "dark"
                         ? "rgba(255, 255, 255, 0.08)"
-                        : "rgba(0, 90, 193, 0.06)"
+                        : "rgba(0, 90, 193, 0.08)"
                       : "transparent",
-                    transition: "all 0.15s ease",
+                    transition: "background-color 0.15s ease",
                     "&:hover": {
-                      bgcolor: resolvedMode === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)",
+                      bgcolor: resolvedMode === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)",
                     },
                   }}
                 >
-                  <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                  <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
                     <Box
                       sx={{
-                        width: 28,
-                        height: 28,
+                        width: 16,
+                        height: 16,
                         borderRadius: "50%",
                         bgcolor: meta.seed,
-                        boxShadow: `0 2px 6px ${meta.seed}44`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "#FFFFFF",
+                        flexShrink: 0,
                       }}
-                    >
-                      {isSelected && <M3Icon name="check" size={16} />}
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: isSelected ? 700 : 500 }}>
-                        {meta.name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem", display: "block" }}>
-                        {meta.description.slice(0, 36)}...
-                      </Typography>
-                    </Box>
+                    />
+                    <Typography variant="body2" sx={{ fontWeight: isSelected ? 600 : 400, color: "text.primary" }}>
+                      {meta.name}
+                    </Typography>
                   </Stack>
+                  {isSelected && (
+                    <Box sx={{ color: "primary.main", display: "flex", alignItems: "center" }}>
+                      <M3Icon name="check" size={18} />
+                    </Box>
+                  )}
                 </Box>
               );
             })}
 
-            {/* Пользовательский цвет бренда */}
+            {/* Пользовательский цвет */}
             <Box
               sx={{
-                p: 1.25,
-                borderRadius: 1.5,
-                border: "1.5px solid",
-                borderColor: preset === "custom" ? customSeed : "transparent",
-                bgcolor: preset === "custom"
-                  ? resolvedMode === "dark"
-                    ? "rgba(255, 255, 255, 0.08)"
-                    : "rgba(0, 90, 193, 0.06)"
-                  : "transparent",
+                mt: 0.75,
+                pt: 1,
+                borderTop: "1px dashed",
+                borderColor: "divider",
               }}
             >
-              <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.75 }}>
                 <Box
                   sx={{
-                    width: 24,
-                    height: 24,
+                    width: 16,
+                    height: 16,
                     borderRadius: "50%",
                     bgcolor: customSeed,
-                    border: "1px solid rgba(0,0,0,0.1)",
+                    border: "1px solid rgba(0,0,0,0.15)",
+                    flexShrink: 0,
                   }}
                 />
-                <Typography variant="body2" sx={{ fontWeight: preset === "custom" ? 700 : 500 }}>
-                  Фирменный цвет компании (Custom)
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
+                  Свой HEX-акцент
                 </Typography>
               </Stack>
 
-              <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
                 <TextField
                   size="small"
                   value={customInput}
                   onChange={(e) => setCustomInput(e.target.value)}
-                  placeholder="#E65100"
+                  placeholder="#0077D6"
                   slotProps={{
                     htmlInput: {
                       "data-testid": "custom-seed-input",
-                      style: { fontFamily: "monospace", padding: "4px 8px", fontSize: "0.85rem" },
+                      style: { fontFamily: "monospace", padding: "4px 8px", fontSize: "0.8rem" },
                     },
                   }}
-                  sx={{ flex: 1 }}
+                  sx={{
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 1,
+                    },
+                  }}
                 />
                 <IconButton
                   onClick={handleCustomApply}
@@ -288,21 +278,21 @@ export const ThemeSwitcherMenu: React.FC = () => {
                     color: "primary.contrastText",
                     "&:hover": { bgcolor: "primary.dark" },
                     borderRadius: 1,
-                    p: 0.75,
+                    p: 0.6,
                   }}
                 >
-                  <M3Icon name="colorize" size={18} />
+                  <M3Icon name="colorize" size={16} />
                 </IconButton>
               </Stack>
             </Box>
           </Stack>
         </Box>
 
-        <Divider sx={{ my: 2 }} />
+        <Divider sx={{ my: 1.5 }} />
 
         {/* Секция: Плотность строк (Density) */}
         <Box>
-          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}>
+          <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", mb: 0.75, display: "block" }}>
             Плотность интерфейса
           </Typography>
           <ToggleButtonGroup
@@ -311,7 +301,6 @@ export const ThemeSwitcherMenu: React.FC = () => {
             onChange={(_, val) => val && setDensity(val as ThemeDensity)}
             size="small"
             fullWidth
-            sx={{ mt: 1 }}
           >
             <ToggleButton value="comfortable" data-testid="density-select-comfortable">
               <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>

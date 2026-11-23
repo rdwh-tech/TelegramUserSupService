@@ -57,7 +57,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           sx={{
             px: 2,
             py: 0.75,
-            borderRadius: 9999,
+            borderRadius: 1,
             bgcolor: (theme) =>
               theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#F1F4FB",
             color: "text.secondary",
@@ -117,8 +117,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           border: isOperator ? "none" : "1px solid",
           borderColor: "divider",
           boxShadow: isOperator
-            ? (theme) => `0 1px 4px ${theme.palette.primary.main}22`
-            : "0 1px 4px rgba(0, 0, 0, 0.05)",
+            ? "0 1px 3px rgba(0, 0, 0, 0.08)"
+            : "0 1px 3px rgba(0, 0, 0, 0.04)",
           wordBreak: "break-word",
           animation: "msgFadeIn 0.18s ease-out",
           "@keyframes msgFadeIn": {

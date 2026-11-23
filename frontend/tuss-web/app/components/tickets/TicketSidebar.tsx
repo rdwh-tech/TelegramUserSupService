@@ -74,11 +74,11 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
     >
       {/* 1. Заголовок и статус обращения */}
       <Box>
-        <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}>
+        <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
           Информация об обращении
         </Typography>
         <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mt: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: "primary.main" }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "primary.main" }}>
             #{ticket.ticketNumber}
           </Typography>
           <Chip
@@ -86,7 +86,7 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
             color={statusCfg.color}
             size="small"
             icon={<M3Icon name={statusCfg.icon} size={16} />}
-            sx={{ fontWeight: 700 }}
+            sx={{ fontWeight: 600 }}
           />
         </Stack>
       </Box>
@@ -95,7 +95,7 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
 
       {/* 2. Карточка клиента в Telegram */}
       <Box data-testid="client-profile-card">
-        <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}>
+        <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
           Клиент Telegram
         </Typography>
 
@@ -106,14 +106,14 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
               height: 44,
               bgcolor: "primary.light",
               color: "primary.main",
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: "1rem",
             }}
           >
             {clientInitials}
           </Avatar>
           <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "text.primary" }} noWrap>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "text.primary" }} noWrap>
               {ticket.client.fullName}
             </Typography>
             {ticket.client.username ? (
@@ -175,7 +175,7 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
 
       {/* 3. Мониторинг регламента SLA */}
       <Box data-testid="sla-monitor-section">
-        <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}>
+        <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
           Контроль регламента SLA
         </Typography>
 
@@ -214,7 +214,7 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
           >
             <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.75, color: "#9E3C00" }}>
               <M3Icon name="call_made" size={18} />
-              <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase" }}>
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>
                 Эскалировано на L2
               </Typography>
             </Stack>

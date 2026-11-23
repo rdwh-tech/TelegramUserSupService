@@ -100,19 +100,19 @@ export const TicketQueueTable: React.FC<TicketQueueTableProps> = ({
         sx={{
           bgcolor: (theme) =>
             theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#F1F4FB",
-          borderRadius: 2,
+          borderRadius: 1,
           p: 0.25,
           "& .MuiToggleButton-root": {
             border: "none",
-            borderRadius: 1.5,
+            borderRadius: 0.75,
             px: 1.25,
             py: 0.4,
             color: "text.secondary",
             "&.Mui-selected": {
               bgcolor: "background.paper",
               color: "primary.main",
-              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)",
-              fontWeight: 700,
+              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.06)",
+              fontWeight: 600,
             },
           },
         }}
@@ -164,7 +164,7 @@ export const TicketQueueTable: React.FC<TicketQueueTableProps> = ({
               >
                 <Stack direction="row" sx={{ justifyContent: "space-between", mb: 1.75 }}>
                   <Skeleton variant="rectangular" width={60} height={24} sx={{ borderRadius: 1 }} />
-                  <Skeleton variant="rounded" width={90} height={24} sx={{ borderRadius: 9999 }} />
+                  <Skeleton variant="rounded" width={90} height={24} sx={{ borderRadius: 1 }} />
                 </Stack>
                 <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", mb: 2 }}>
                   <Skeleton variant="circular" width={38} height={38} />
@@ -176,7 +176,7 @@ export const TicketQueueTable: React.FC<TicketQueueTableProps> = ({
                 <Skeleton variant="rectangular" height={60} sx={{ borderRadius: 1.5, mb: 2 }} />
                 <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", pt: 1 }}>
                   <Skeleton variant="rectangular" width={75} height={20} sx={{ borderRadius: 1 }} />
-                  <Skeleton variant="rounded" width={110} height={32} sx={{ borderRadius: 9999 }} />
+                  <Skeleton variant="rounded" width={110} height={32} sx={{ borderRadius: 1 }} />
                 </Stack>
               </Card>
             ))}
@@ -197,14 +197,14 @@ export const TicketQueueTable: React.FC<TicketQueueTableProps> = ({
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 700, width: 110 }}>№ Тикета</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 220 }}>Клиент</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Первое сообщение</TableCell>
+                    <TableCell sx={{ fontWeight: 600, width: 110 }}>№ Тикета</TableCell>
+                    <TableCell sx={{ fontWeight: 600, width: 220 }}>Клиент</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Первое сообщение</TableCell>
                     {level === "l2" && (
-                      <TableCell sx={{ fontWeight: 700, width: 220 }}>Причина эскалации</TableCell>
+                      <TableCell sx={{ fontWeight: 600, width: 220 }}>Причина эскалации</TableCell>
                     )}
-                    <TableCell sx={{ fontWeight: 700, width: 150 }}>Регламент SLA</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 170, textAlign: "right" }}>
+                    <TableCell sx={{ fontWeight: 600, width: 150 }}>Регламент SLA</TableCell>
+                    <TableCell sx={{ fontWeight: 600, width: 170, textAlign: "right" }}>
                       Действие
                     </TableCell>
                   </TableRow>
@@ -234,10 +234,10 @@ export const TicketQueueTable: React.FC<TicketQueueTableProps> = ({
                         </TableCell>
                       )}
                       <TableCell>
-                        <Skeleton variant="rounded" width={110} height={32} sx={{ borderRadius: 9999 }} />
+                        <Skeleton variant="rounded" width={110} height={32} sx={{ borderRadius: 1 }} />
                       </TableCell>
                       <TableCell align="right">
-                        <Skeleton variant="rounded" width={130} height={36} sx={{ borderRadius: 9999, ml: "auto" }} />
+                        <Skeleton variant="rounded" width={130} height={36} sx={{ borderRadius: 1, ml: "auto" }} />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -335,24 +335,24 @@ export const TicketQueueTable: React.FC<TicketQueueTableProps> = ({
             <Table sx={{ minWidth: 700 }}>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 700, color: "text.secondary", width: 110 }}>
+                  <TableCell sx={{ fontWeight: 600, color: "text.secondary", width: 110 }}>
                     № Тикета
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: "text.secondary", width: 220 }}>
+                  <TableCell sx={{ fontWeight: 600, color: "text.secondary", width: 220 }}>
                     Клиент
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: "text.secondary" }}>
+                  <TableCell sx={{ fontWeight: 600, color: "text.secondary" }}>
                     Первое сообщение
                   </TableCell>
                   {level === "l2" && (
-                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", width: 220 }}>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary", width: 220 }}>
                       Причина эскалации
                     </TableCell>
                   )}
-                  <TableCell sx={{ fontWeight: 700, color: "text.secondary", width: 150 }}>
+                  <TableCell sx={{ fontWeight: 600, color: "text.secondary", width: 150 }}>
                     Регламент SLA
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: "text.secondary", width: 180, textAlign: "right" }}>
+                  <TableCell sx={{ fontWeight: 600, color: "text.secondary", width: 180, textAlign: "right" }}>
                     Действие
                   </TableCell>
                 </TableRow>
@@ -378,7 +378,7 @@ export const TicketQueueTable: React.FC<TicketQueueTableProps> = ({
                       }}
                     >
                       {/* Номер тикета */}
-                      <TableCell sx={{ fontWeight: 800, color: "primary.main" }}>
+                      <TableCell sx={{ fontWeight: 600, color: "primary.main" }}>
                         #{ticket.ticketNumber}
                       </TableCell>
 
@@ -390,7 +390,7 @@ export const TicketQueueTable: React.FC<TicketQueueTableProps> = ({
                               width: 36,
                               height: 36,
                               fontSize: "0.85rem",
-                              fontWeight: 700,
+                              fontWeight: 600,
                               bgcolor: "primary.light",
                               color: "primary.main",
                             }}

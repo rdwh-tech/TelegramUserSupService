@@ -24,79 +24,20 @@ export const AuthBackground: React.FC<{ children: React.ReactNode }> = ({
         <ThemeSwitcherMenu />
       </Box>
 
-      {/* Декоративная фоновая точечная сетка */}
+      {/* Спокойный архитектурный градиент фона */}
       <Box
         sx={{
           position: "absolute",
           inset: 0,
-          backgroundImage: (theme) =>
-            theme.palette.mode === "dark"
-              ? "radial-gradient(rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px)"
-              : `radial-gradient(${theme.palette.primary.main}16 1.5px, transparent 1.5px)`,
-          backgroundSize: "28px 28px",
-          pointerEvents: "none",
-          opacity: (theme) => (theme.palette.mode === "dark" ? 0.6 : 0.85),
-        }}
-      />
-
-      {/* Плавающая градиентная сфера 1 (акцент сверху-слева) */}
-      <Box
-        className="animate-blob-1"
-        sx={{
-          position: "absolute",
-          top: "-10%",
-          left: "15%",
-          width: { xs: 340, sm: 540 },
-          height: { xs: 340, sm: 540 },
-          borderRadius: "50%",
           background: (theme) =>
             theme.palette.mode === "dark"
-              ? `radial-gradient(circle, ${theme.palette.primary.main}22 0%, transparent 72%)`
-              : `radial-gradient(circle, ${theme.palette.primary.main}18 0%, ${theme.palette.primary.light}10 50%, transparent 72%)`,
-          filter: "blur(65px)",
+              ? "radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.03) 0%, transparent 65%)"
+              : "radial-gradient(ellipse at 50% 20%, rgba(0, 0, 0, 0.02) 0%, transparent 65%)",
           pointerEvents: "none",
         }}
       />
 
-      {/* Плавающая градиентная сфера 2 (акцент снизу-справа) */}
-      <Box
-        className="animate-blob-2"
-        sx={{
-          position: "absolute",
-          bottom: "-12%",
-          right: "10%",
-          width: { xs: 380, sm: 600 },
-          height: { xs: 380, sm: 600 },
-          borderRadius: "50%",
-          background: (theme) =>
-            theme.palette.mode === "dark"
-              ? `radial-gradient(circle, ${theme.palette.primary.dark}1c 0%, transparent 75%)`
-              : `radial-gradient(circle, ${theme.palette.primary.main}12 0%, transparent 75%)`,
-          filter: "blur(75px)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Плавающая градиентная сфера 3 (акцент по центру-слева) */}
-      <Box
-        className="animate-blob-3"
-        sx={{
-          position: "absolute",
-          top: "40%",
-          left: "5%",
-          width: { xs: 280, sm: 460 },
-          height: { xs: 280, sm: 460 },
-          borderRadius: "50%",
-          background: (theme) =>
-            theme.palette.mode === "dark"
-              ? `radial-gradient(circle, ${theme.palette.primary.main}15 0%, transparent 75%)`
-              : `radial-gradient(circle, ${theme.palette.primary.main}10 0%, transparent 75%)`,
-          filter: "blur(60px)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Центральный контент (карточка формы с эффектом frosted glass) */}
+      {/* Центральный контент */}
       <Box
         sx={{
           position: "relative",

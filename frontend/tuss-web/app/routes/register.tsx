@@ -134,21 +134,14 @@ export default function RegisterRoute() {
           width: "100%",
           maxWidth: 480,
           p: { xs: 2.5, sm: 4 },
-          bgcolor: (theme) =>
-            theme.palette.mode === "dark"
-              ? "rgba(28, 33, 40, 0.9)"
-              : "rgba(255, 255, 255, 0.9)",
-          backdropFilter: "blur(20px)",
+          bgcolor: "background.paper",
           boxShadow: (theme) =>
             theme.palette.mode === "dark"
-              ? "0 16px 40px rgba(0, 0, 0, 0.6)"
-              : "0 16px 40px -12px rgba(0, 45, 110, 0.08), 0 2px 6px rgba(0, 0, 0, 0.02)",
-          borderRadius: 2.5,
+              ? "0 12px 32px rgba(0, 0, 0, 0.45)"
+              : "0 8px 30px rgba(0, 0, 0, 0.06)",
+          borderRadius: 2,
           border: "1px solid",
-          borderColor: (theme) =>
-            theme.palette.mode === "dark"
-              ? "rgba(255, 255, 255, 0.12)"
-              : "rgba(255, 255, 255, 0.85)",
+          borderColor: "divider",
         }}
       >
         <CardContent sx={{ p: 0 }}>
@@ -164,17 +157,15 @@ export default function RegisterRoute() {
           >
             <Box
               sx={{
-                width: 50,
-                height: 50,
-                borderRadius: "12px",
-                background: (theme) =>
-                  `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                color: (theme) => theme.palette.primary.contrastText,
+                width: 48,
+                height: 48,
+                borderRadius: 1.5,
+                bgcolor: "primary.main",
+                color: "primary.contrastText",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 mb: 1.5,
-                boxShadow: (theme) => `0 8px 20px ${theme.palette.primary.main}33`,
               }}
             >
               <M3Icon name="person_add" size={26} />
@@ -182,7 +173,7 @@ export default function RegisterRoute() {
             <Typography
               variant="h5"
               sx={{
-                fontWeight: 700,
+                fontWeight: 600,
                 letterSpacing: "-0.01em",
                 color: "text.primary",
               }}
