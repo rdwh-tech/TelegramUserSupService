@@ -19,6 +19,9 @@ import { M3Icon } from "~/components/ui/M3Icon";
 import { M3Button } from "~/components/ui/M3Button";
 import { TicketSidebar } from "~/components/tickets/TicketSidebar";
 import { MessageList } from "~/components/chat/MessageList";
+import { MessageComposer } from "~/components/chat/MessageComposer";
+import { ImageLightbox } from "~/components/chat/ImageLightbox";
+import type { ExtendedMessage } from "~/components/chat/MessageItem";
 import type { Ticket } from "~/types/ticket";
 import type { TicketMessage } from "~/types/message";
 
@@ -35,9 +38,15 @@ export default function TicketDetailsRoute() {
   const navigate = useNavigate();
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
-  const [messages, setMessages] = useState<TicketMessage[]>([]);
+  const [messages, setMessages] = useState<ExtendedMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [lightboxState, setLightboxState] = useState<{
+    open: boolean;
+    url: string | null;
+    fileName?: string;
+  }>({ open: false, url: null });
 
   // Обработка кнопки назад в зависимости от роли
   const backQueuePath =
@@ -88,6 +97,77 @@ export default function TicketDetailsRoute() {
       isMounted = false;
     };
   }, [id]);
+
+  const handleSendMessage = async (text: string, files: File[]) => {
+    if (!id) return;
+    setIsSending(true);
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg: ExtendedMessage = {
+      id: tempId,
+      ticketId: id,
+      senderType: "operator",
+      senderName: user?.fullName || "Служба поддержки",
+      text,
+      isDelivered: false,
+      deliveryStatus: "sending",
+      createdAt: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, optimisticMsg]);
+
+    try {
+      const savedMessage = await ticketsApi.sendMessage({
+        ticketId: id,
+        text,
+        attachments: files.length > 0 ? files : undefined,
+      });
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === tempId ? { ...savedMessage, deliveryStatus: "delivered" } : m
+        )
+      );
+    } catch (err: any) {
+      console.error("Ошибка при отправке сообщения в Telegram:", err);
+      setMessages((prev) =>
+        prev.map((m) => (m.id === tempId ? { ...m, deliveryStatus: "failed" } : m))
+      );
+      throw err;
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleRetryMessage = async (failedMessageId: string) => {
+    if (!id) return;
+    const targetMsg = messages.find((m) => m.id === failedMessageId);
+    if (!targetMsg) return;
+
+    setMessages((prev) =>
+      prev.map((m) => (m.id === failedMessageId ? { ...m, deliveryStatus: "sending" } : m))
+    );
+
+    try {
+      const saved = await ticketsApi.sendMessage({
+        ticketId: id,
+        text: targetMsg.text,
+      });
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === failedMessageId ? { ...saved, deliveryStatus: "delivered" } : m
+        )
+      );
+    } catch (err) {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === failedMessageId ? { ...m, deliveryStatus: "failed" } : m))
+      );
+    }
+  };
+
+  const handleImageClick = (imageUrl: string, fileName?: string) => {
+    setLightboxState({ open: true, url: imageUrl, fileName });
+  };
 
   return (
     <RoleGuard allowedRoles={["operator_l1", "operator_l2", "admin"]}>
@@ -223,7 +303,18 @@ export default function TicketDetailsRoute() {
               </Box>
 
               {/* Область переписки (лента сообщений) */}
-              <MessageList messages={messages} />
+              <MessageList
+                messages={messages}
+                onRetry={handleRetryMessage}
+                onImageClick={handleImageClick}
+              />
+
+              {/* Форма набора сообщения и вложений */}
+              <MessageComposer
+                onSendMessage={handleSendMessage}
+                disabled={isReadOnly}
+                isSending={isSending}
+              />
             </Paper>
 
             {/* Правая зона: Информационный сайдбар тикета */}
@@ -236,6 +327,14 @@ export default function TicketDetailsRoute() {
             />
           </Box>
         ) : null}
+
+        {/* Модальное окно просмотра изображений в полном размере */}
+        <ImageLightbox
+          open={lightboxState.open}
+          imageUrl={lightboxState.url}
+          fileName={lightboxState.fileName}
+          onClose={() => setLightboxState({ open: false, url: null })}
+        />
       </Box>
     </RoleGuard>
   );
