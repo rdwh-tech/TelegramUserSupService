@@ -137,7 +137,7 @@ export default function RegisterRoute() {
           background: "rgba(255, 255, 255, 0.88)",
           backdropFilter: "blur(20px)",
           boxShadow: "0 16px 40px -12px rgba(0, 45, 110, 0.08), 0 2px 6px rgba(0, 0, 0, 0.02)",
-          borderRadius: 4,
+          borderRadius: 2,
           border: "1px solid rgba(255, 255, 255, 0.85)",
         }}
       >
@@ -156,7 +156,7 @@ export default function RegisterRoute() {
               sx={{
                 width: 50,
                 height: 50,
-                borderRadius: "16px",
+                borderRadius: "12px",
                 background: "linear-gradient(135deg, #005AC1 0%, #1E78E9 100%)",
                 color: "#FFFFFF",
                 display: "flex",
@@ -187,7 +187,7 @@ export default function RegisterRoute() {
           {errorMessage && (
             <Alert
               severity="error"
-              sx={{ mb: 3, borderRadius: 2 }}
+              sx={{ mb: 3, borderRadius: 1.5 }}
               icon={<M3Icon name="error" size={20} />}
             >
               {errorMessage}

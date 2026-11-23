@@ -178,7 +178,7 @@ export default function TicketsArchiveRoute() {
           sx={{
             p: 2,
             mb: 3,
-            borderRadius: 3.5,
+            borderRadius: 2,
             border: "1px solid rgba(196, 198, 208, 0.4)",
             display: "flex",
             flexDirection: { xs: "column", sm: "row" },
@@ -231,7 +231,7 @@ export default function TicketsArchiveRoute() {
             elevation={0}
             data-testid="archive-skeleton-loading"
             sx={{
-              borderRadius: 4,
+              borderRadius: 2,
               border: "1px solid rgba(196, 198, 208, 0.4)",
               overflow: "hidden",
             }}
@@ -285,7 +285,7 @@ export default function TicketsArchiveRoute() {
               py: 8,
               px: 3,
               textAlign: "center",
-              borderRadius: 4,
+              borderRadius: 2,
               border: "1px dashed rgba(196, 198, 208, 0.8)",
               bgcolor: "#F8F9FE",
             }}
@@ -320,7 +320,7 @@ export default function TicketsArchiveRoute() {
             elevation={0}
             data-testid="archive-table"
             sx={{
-              borderRadius: 4,
+              borderRadius: 2,
               border: "1px solid rgba(196, 198, 208, 0.4)",
               overflow: "hidden",
               bgcolor: "#FFFFFF",

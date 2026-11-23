@@ -259,7 +259,7 @@ export default function TicketDetailsRoute() {
         </Stack>
 
         {errorMessage && (
-          <Alert severity="error" sx={{ borderRadius: 3 }}>
+          <Alert severity="error" sx={{ borderRadius: 1.5 }}>
             {errorMessage}
           </Alert>
         )}
@@ -271,7 +271,7 @@ export default function TicketDetailsRoute() {
             sx={{
               p: 8,
               textAlign: "center",
-              borderRadius: 4,
+              borderRadius: 2,
               border: "1px solid rgba(196, 198, 208, 0.4)",
             }}
           >
@@ -297,7 +297,7 @@ export default function TicketDetailsRoute() {
               sx={{
                 flex: 1,
                 minWidth: 0,
-                borderRadius: 4,
+                borderRadius: 2,
                 border: "1px solid rgba(196, 198, 208, 0.4)",
                 bgcolor: "#FFFFFF",
                 display: "flex",

@@ -18,7 +18,7 @@ export const ActiveTicketBanner: React.FC<ActiveTicketBannerProps> = ({ activeTi
       sx={{
         mb: 3,
         p: { xs: 2, sm: 2.5 },
-        borderRadius: 4,
+        borderRadius: 2,
         bgcolor: "#FFF8E1",
         border: "1px solid #FFE08A",
         color: "#523600",
@@ -35,7 +35,7 @@ export const ActiveTicketBanner: React.FC<ActiveTicketBannerProps> = ({ activeTi
           sx={{
             width: 44,
             height: 44,
-            borderRadius: 3,
+            borderRadius: 1.5,
             bgcolor: "#FFEBA7",
             color: "#9A6B00",
             display: "flex",

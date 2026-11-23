@@ -113,7 +113,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
         <Alert
           severity="warning"
           onClose={() => setFileError(null)}
-          sx={{ mb: 1.5, borderRadius: 2.5 }}
+          sx={{ mb: 1.5, borderRadius: 1.5 }}
         >
           {fileError}
         </Alert>
@@ -135,7 +135,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
                   <M3Icon name="description" size={16} />
                 )
               }
-              sx={{ bgcolor: "#F1F4FB", borderRadius: 2 }}
+              sx={{ bgcolor: "#F1F4FB", borderRadius: 1 }}
             />
           ))}
         </Stack>
@@ -193,7 +193,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           }}
           sx={{
             "& .MuiOutlinedInput-root": {
-              borderRadius: 3,
+              borderRadius: 1.5,
               bgcolor: disabled ? "#F8F9FE" : "#FAFAFD",
               fontSize: "0.9375rem",
             },

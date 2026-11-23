@@ -51,7 +51,7 @@ export const m3Theme = createTheme({
         },
     },
     shape: {
-        borderRadius: 16,          // Выразительные скругления Expressive
+        borderRadius: 8,           // Умеренное аккуратное скругление
     },
     components: {
         MuiButton: {
@@ -72,16 +72,23 @@ export const m3Theme = createTheme({
             },
             styleOverrides: {
                 root: {
-                    borderRadius: 20,
+                    borderRadius: 12,
                     backgroundColor: "#F3F4FA",
                     border: "1px solid rgba(196, 198, 208, 0.4)",
+                },
+            },
+        },
+        MuiPaper: {
+            styleOverrides: {
+                rounded: {
+                    borderRadius: 12,
                 },
             },
         },
         MuiDialog: {
             styleOverrides: {
                 paper: {
-                    borderRadius: 28,
+                    borderRadius: 16,
                 },
             },
         },

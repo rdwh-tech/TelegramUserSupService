@@ -51,7 +51,7 @@ export const CloseTicketModal: React.FC<CloseTicketModalProps> = ({
       fullWidth
       slotProps={{
         paper: {
-          sx: { borderRadius: 4, p: 1 },
+          sx: { borderRadius: 2, p: 1 },
         },
       }}
     >
@@ -70,7 +70,7 @@ export const CloseTicketModal: React.FC<CloseTicketModalProps> = ({
           sx={{
             mb: 2.5,
             p: 1.75,
-            borderRadius: 3,
+            borderRadius: 1.5,
             bgcolor: "#F1F8F3",
             border: "1px solid #D1E7DD",
             color: "#0F5132",
@@ -91,7 +91,7 @@ export const CloseTicketModal: React.FC<CloseTicketModalProps> = ({
         </Typography>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2, borderRadius: 2.5 }}>
+          <Alert severity="error" sx={{ mb: 2, borderRadius: 1.5 }}>
             {error}
           </Alert>
         )}

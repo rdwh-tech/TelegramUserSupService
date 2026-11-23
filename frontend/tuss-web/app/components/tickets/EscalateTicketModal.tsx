@@ -50,7 +50,7 @@ export const EscalateTicketModal: React.FC<EscalateTicketModalProps> = ({
       fullWidth
       slotProps={{
         paper: {
-          sx: { borderRadius: 4, p: 1 },
+          sx: { borderRadius: 2, p: 1 },
         },
       }}
     >
@@ -71,7 +71,7 @@ export const EscalateTicketModal: React.FC<EscalateTicketModalProps> = ({
         </Typography>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2, borderRadius: 2.5 }}>
+          <Alert severity="error" sx={{ mb: 2, borderRadius: 1.5 }}>
             {error}
           </Alert>
         )}

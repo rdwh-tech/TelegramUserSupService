@@ -93,7 +93,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen }) => {
                     minHeight: 44,
                     height: 44,
                     width: isOpen ? "100%" : 44,
-                    borderRadius: 3,
+                    borderRadius: 1.5,
                     px: isOpen ? 2 : 0,
                     justifyContent: isOpen ? "initial" : "center",
                     alignItems: "center",

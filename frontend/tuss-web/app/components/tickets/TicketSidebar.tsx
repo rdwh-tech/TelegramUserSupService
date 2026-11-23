@@ -61,7 +61,7 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
       sx={{
         width: { xs: "100%", md: 340 },
         flexShrink: 0,
-        borderRadius: 4,
+        borderRadius: 2,
         border: "1px solid rgba(196, 198, 208, 0.4)",
         bgcolor: "#FFFFFF",
         p: 2.5,
@@ -142,7 +142,7 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
           </Box>
         </Stack>
 
-        <Stack spacing={0.75} sx={{ mt: 2, bgcolor: "#F8F9FE", p: 1.5, borderRadius: 2.5 }}>
+        <Stack spacing={0.75} sx={{ mt: 2, bgcolor: "#F8F9FE", p: 1.5, borderRadius: 1.5 }}>
           <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
             <Typography variant="caption" color="text.secondary">
               ID пользователя:
@@ -195,7 +195,7 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
             data-testid="escalation-info-box"
             sx={{
               p: 1.75,
-              borderRadius: 3,
+              borderRadius: 1.5,
               bgcolor: "#FFF8F2",
               border: "1px solid #FFE4D6",
             }}
@@ -227,7 +227,7 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
             elevation={0}
             sx={{
               p: 1.5,
-              borderRadius: 3,
+              borderRadius: 1.5,
               bgcolor: "#F1F8F3",
               border: "1px solid #D1E7DD",
               textAlign: "center",
@@ -245,7 +245,7 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
             elevation={0}
             sx={{
               p: 1.5,
-              borderRadius: 3,
+              borderRadius: 1.5,
               bgcolor: "#F8F9FE",
               border: "1px solid rgba(196, 198, 208, 0.4)",
               textAlign: "center",

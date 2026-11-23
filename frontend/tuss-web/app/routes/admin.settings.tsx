@@ -36,7 +36,7 @@ export default function AdminSettingsRoute() {
           </div>
         </Stack>
 
-        <Card sx={{ borderRadius: 3, border: "1px solid", borderColor: "divider", overflow: "hidden" }}>
+        <Card sx={{ borderRadius: 2, border: "1px solid", borderColor: "divider", overflow: "hidden" }}>
           <Box sx={{ borderBottom: "1px solid", borderColor: "divider", px: 2, bgcolor: "background.paper" }}>
             <Tabs
               value={tabIndex}

@@ -104,9 +104,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         sx={{
           position: "relative",
           p: 1.75,
-          borderRadius: 3.5,
-          borderTopRightRadius: isOperator ? 1 : 3.5,
-          borderTopLeftRadius: !isOperator ? 1 : 3.5,
+          borderRadius: 2,
+          borderTopRightRadius: isOperator ? 0.5 : 2,
+          borderTopLeftRadius: !isOperator ? 0.5 : 2,
           bgcolor: isOperator ? "#D8E2FF" : "#FFFFFF",
           color: isOperator ? "#001A41" : "text.primary",
           border: isOperator ? "none" : "1px solid rgba(196, 198, 208, 0.4)",
@@ -126,7 +126,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                   key={att.id}
                   onClick={() => onImageClick?.(att.fileUrl, att.fileName)}
                   sx={{
-                    borderRadius: 2.5,
+                    borderRadius: 1.5,
                     overflow: "hidden",
                     cursor: "pointer",
                     maxWidth: 280,
@@ -154,7 +154,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                     alignItems: "center",
                     gap: 1.25,
                     p: 1.25,
-                    borderRadius: 2.5,
+                    borderRadius: 1.5,
                     bgcolor: isOperator ? "rgba(255, 255, 255, 0.6)" : "#F1F4FB",
                     color: "inherit",
                     textDecoration: "none",

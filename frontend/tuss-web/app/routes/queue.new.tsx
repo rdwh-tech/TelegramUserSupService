@@ -167,7 +167,7 @@ export default function QueueNewRoute() {
           <Alert
             severity="warning"
             onClose={() => setErrorMessage(null)}
-            sx={{ mb: 3, borderRadius: 3 }}
+            sx={{ mb: 3, borderRadius: 1.5 }}
             icon={<M3Icon name="warning" size={20} />}
           >
             {errorMessage}
@@ -184,7 +184,7 @@ export default function QueueNewRoute() {
           <Alert
             severity="success"
             onClose={() => setSuccessMessage(null)}
-            sx={{ borderRadius: 3 }}
+            sx={{ borderRadius: 1.5 }}
           >
             {successMessage}
           </Alert>

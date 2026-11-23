@@ -29,12 +29,12 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
             bgcolor: "transparent",
             boxShadow: "none",
             overflow: "hidden",
-            borderRadius: 3,
+            borderRadius: 2,
           },
         },
       }}
     >
-      <Box sx={{ position: "relative", bgcolor: "rgba(0, 0, 0, 0.9)", p: 1.5, borderRadius: 3 }}>
+      <Box sx={{ position: "relative", bgcolor: "rgba(0, 0, 0, 0.9)", p: 1.5, borderRadius: 2 }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1, px: 1 }}>
           <Typography variant="caption" sx={{ color: "#FFFFFF", fontWeight: 700 }}>
             {fileName || "Изображение"}
@@ -52,7 +52,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
             maxWidth: "90vw",
             maxHeight: "80vh",
             objectFit: "contain",
-            borderRadius: 2,
+            borderRadius: 1.5,
             display: "block",
             mx: "auto",
           }}

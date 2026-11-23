@@ -112,7 +112,7 @@ export default function OnboardingInviteCodeRoute() {
     <RoleGuard requireCompany={false} allowedRoles={["unassigned_operator", "operator_l1", "operator_l2", "admin"]}>
       <Box sx={{ maxWidth: 640, mx: "auto", py: { xs: 2, sm: 5 } }}>
         {user?.companyId && (
-          <Alert severity="info" sx={{ mb: 3, borderRadius: 3 }}>
+          <Alert severity="info" sx={{ mb: 3, borderRadius: 1.5 }}>
             Вы уже прикреплены к компании (ID: {user.companyId}).{" "}
             <Link to="/queue/new" style={{ fontWeight: 600, color: "inherit" }}>
               Перейти в очередь обращений
@@ -123,7 +123,7 @@ export default function OnboardingInviteCodeRoute() {
         <Card
           sx={{
             p: { xs: 3, sm: 4 },
-            borderRadius: 4,
+            borderRadius: 2,
             border: "1px solid",
             borderColor: "divider",
             boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)",
@@ -134,7 +134,7 @@ export default function OnboardingInviteCodeRoute() {
             sx={{
               width: 56,
               height: 56,
-              borderRadius: "16px",
+              borderRadius: "12px",
               backgroundColor: "rgba(0, 90, 193, 0.08)",
               color: "primary.main",
               display: "flex",
@@ -162,7 +162,7 @@ export default function OnboardingInviteCodeRoute() {
               gap: 2,
               px: 3.5,
               py: 2,
-              borderRadius: 3,
+              borderRadius: 1.5,
               backgroundColor: "background.default",
               border: "1.5px dashed",
               borderColor: "primary.main",
@@ -219,7 +219,7 @@ export default function OnboardingInviteCodeRoute() {
                 sx={{
                   p: 3,
                   textAlign: "center",
-                  borderRadius: 2.5,
+                  borderRadius: 1.5,
                   bgcolor: "background.paper",
                   borderStyle: "dashed",
                   borderColor: "divider",
@@ -243,7 +243,7 @@ export default function OnboardingInviteCodeRoute() {
                     variant="outlined"
                     sx={{
                       p: 2,
-                      borderRadius: 2.5,
+                      borderRadius: 1.5,
                       bgcolor: "background.paper",
                     }}
                   >
@@ -257,7 +257,7 @@ export default function OnboardingInviteCodeRoute() {
                           sx={{
                             width: 38,
                             height: 38,
-                            borderRadius: 2,
+                            borderRadius: 1.5,
                             bgcolor: "rgba(0, 90, 193, 0.08)",
                             color: "primary.main",
                             display: "flex",
