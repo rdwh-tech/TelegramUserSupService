@@ -12,6 +12,7 @@ import {
 import { useAuth } from "~/context/AuthContext";
 import { M3Icon } from "~/components/ui/M3Icon";
 import { M3Button } from "~/components/ui/M3Button";
+import { ThemeSwitcherMenu } from "~/components/layout/ThemeSwitcherMenu";
 
 interface AppHeaderProps {
   sidebarOpen: boolean;
@@ -193,8 +194,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         )}
       </Stack>
 
-      {/* Правая часть: статус сети, профиль пользователя и выход */}
-      <Stack direction="row" spacing={{ xs: 1.5, sm: 2.5 }} sx={{ alignItems: "center" }}>
+      {/* Правая часть: переключатель тем M3, статус сети, профиль пользователя и выход */}
+      <Stack direction="row" spacing={{ xs: 1, sm: 2 }} sx={{ alignItems: "center" }}>
+        {/* Переключатель темы и палитры Material 3 */}
+        <ThemeSwitcherMenu />
+
         {/* Индикатор сетевого соединения / WebSocket (FR-WEB-29, SRS 4.1.2) */}
         <Tooltip title={isConnected ? "WebSocket соединение активно" : "Связь потеряна"}>
           <Stack
