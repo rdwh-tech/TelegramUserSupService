@@ -8,6 +8,7 @@ export type UserRole =
 export interface User {
   id: string;
   companyId: string | null;
+  companyName?: string | null;
   login: string;
   fullName: string;
   role: UserRole;
