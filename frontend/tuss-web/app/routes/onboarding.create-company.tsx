@@ -1,5 +1,6 @@
 // app/routes/onboarding.create-company.tsx
 import React, { useState } from "react";
+import { useNavigate } from "react-router";
 import {
   Box,
   Typography,
@@ -10,6 +11,8 @@ import {
   Alert,
 } from "@mui/material";
 import { RoleGuard } from "~/components/auth/RoleGuard";
+import { useAuth } from "~/context/AuthContext";
+import { authApi } from "~/api/auth";
 import { M3Icon } from "~/components/ui/M3Icon";
 import { M3Button } from "~/components/ui/M3Button";
 
@@ -21,18 +24,31 @@ export function meta() {
 }
 
 export default function OnboardingCreateCompanyRoute() {
+  const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [created, setCreated] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    setError(null);
+
+    try {
+      await authApi.createCompany({ name: name.trim() });
+      await refreshUser();
       setCreated(true);
-    }, 1200);
+      setTimeout(() => {
+        navigate("/admin/analytics", { replace: true });
+      }, 1500);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Не удалось создать компанию. Попробуйте еще раз.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -74,6 +90,12 @@ export default function OnboardingCreateCompanyRoute() {
           >
             Вы зарегистрированы как администратор. Создайте профиль компании для подключения Telegram-бота и добавления операторов.
           </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+              {error}
+            </Alert>
+          )}
 
           {created ? (
             <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>

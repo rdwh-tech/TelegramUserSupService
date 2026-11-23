@@ -62,4 +62,13 @@ export const authApi = {
   async rejectInvitation(invitationId: string): Promise<void> {
     await apiClient.post(`/operator/invitations/${invitationId}/reject`);
   },
+
+  // Создать компанию администратором (FR-WEB-5, FR-API-28)
+  async createCompany(payload: { name: string; timezone?: string }): Promise<User> {
+    const { data } = await apiClient.post<{ company: any; user: User }>("/company", payload);
+    if (data.user) {
+      authStorage.setUser(data.user);
+    }
+    return data.user;
+  },
 };
