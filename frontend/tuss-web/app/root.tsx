@@ -11,6 +11,7 @@ import { ThemeProvider, CssBaseline } from "@mui/material";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "~/api/queryClient";
 import { m3Theme } from "~/theme/m3Theme";
+import { AuthProvider } from "~/context/AuthContext";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -44,7 +45,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <QueryClientProvider client={queryClient}>
           <ThemeProvider theme={m3Theme}>
             <CssBaseline />
-            {children}
+            <AuthProvider>
+              {children}
+            </AuthProvider>
           </ThemeProvider>
         </QueryClientProvider>
         <ScrollRestoration />

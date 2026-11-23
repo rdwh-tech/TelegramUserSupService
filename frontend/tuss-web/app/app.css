@@ -12,3 +12,55 @@ body {
   min-height: 100vh;
   /* Цвет фона и текста теперь контролируются темой Material 3 через CssBaseline */
 }
+
+/* Мягкие фоновые анимации градиентных сфер (Aurora Mesh) */
+@keyframes floatBlob1 {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(50px, 35px) scale(1.08);
+  }
+  100% {
+    transform: translate(-30px, 45px) scale(0.96);
+  }
+}
+
+@keyframes floatBlob2 {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(-45px, -35px) scale(1.06);
+  }
+  100% {
+    transform: translate(35px, -20px) scale(0.95);
+  }
+}
+
+@keyframes floatBlob3 {
+  0% {
+    transform: translate(0px, 0px) scale(0.95);
+  }
+  50% {
+    transform: translate(35px, -40px) scale(1.05);
+  }
+  100% {
+    transform: translate(-35px, 25px) scale(1);
+  }
+}
+
+.animate-blob-1 {
+  animation: floatBlob1 20s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.animate-blob-2 {
+  animation: floatBlob2 24s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.animate-blob-3 {
+  animation: floatBlob3 28s ease-in-out infinite alternate;
+  will-change: transform;
+}

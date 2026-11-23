@@ -1,5 +1,7 @@
 # .gitignore
 
+docs/
+
 # ─── Python (bot) ───
 __pycache__/
 *.py[cod]
