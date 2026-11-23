@@ -141,28 +141,28 @@ export function buildM3Theme(options: BuildThemeOptions = {}): Theme {
         contrastText: secondaryContrastText,
       },
       error: {
-        main: isDark ? "#FFB4AB" : "#BA1A1A",
-        light: isDark ? "rgba(255, 180, 171, 0.16)" : "#FFDAD6",
-        dark: isDark ? "#FF5449" : "#93000A",
-        contrastText: isDark ? "#410002" : "#FFFFFF",
+        main: isDark ? "#F87171" : "#DC2626",
+        light: isDark ? "rgba(239, 68, 68, 0.2)" : "#FEF2F2",
+        dark: isDark ? "#EF4444" : "#991B1B",
+        contrastText: "#FFFFFF",
       },
       warning: {
-        main: isDark ? "#FFBA28" : "#9A6B00",
-        light: isDark ? "rgba(255, 186, 40, 0.16)" : "#FFF8E1",
-        dark: isDark ? "#FFD088" : "#7A4E00",
-        contrastText: isDark ? "#2A1800" : "#FFFFFF",
+        main: isDark ? "#FBBF24" : "#D97706",
+        light: isDark ? "rgba(245, 158, 11, 0.2)" : "#FFFBEB",
+        dark: isDark ? "#F59E0B" : "#92400E",
+        contrastText: "#FFFFFF",
       },
       success: {
-        main: isDark ? "#7BD78D" : "#1E6C30",
-        light: isDark ? "rgba(123, 215, 141, 0.16)" : "#E8F5E9",
-        dark: isDark ? "#9EF2AE" : "#00531E",
-        contrastText: isDark ? "#003913" : "#FFFFFF",
+        main: isDark ? "#4ADE80" : "#16A34A",
+        light: isDark ? "rgba(34, 197, 94, 0.2)" : "#F0FDF4",
+        dark: isDark ? "#22C55E" : "#166534",
+        contrastText: "#FFFFFF",
       },
       info: {
-        main: isDark ? "#7BD0FF" : "#006399",
-        light: isDark ? "rgba(123, 208, 255, 0.16)" : "#E7F0FF",
-        dark: isDark ? "#A6DCFF" : "#004B76",
-        contrastText: isDark ? "#003453" : "#FFFFFF",
+        main: isDark ? "#60A5FA" : "#2563EB",
+        light: isDark ? "rgba(59, 130, 246, 0.2)" : "#EFF6FF",
+        dark: isDark ? "#3B82F6" : "#1E40AF",
+        contrastText: "#FFFFFF",
       },
       background: {
         default: bgDefault,
@@ -250,43 +250,52 @@ export function buildM3Theme(options: BuildThemeOptions = {}): Theme {
       },
       MuiAlert: {
         styleOverrides: {
-          root: ({ ownerState }) => ({
-            borderRadius: 10,
-            border: "1px solid",
-            fontSize: "0.875rem",
-            ...(ownerState.severity === "error" && {
-              backgroundColor: isDark ? "rgba(255, 180, 171, 0.14)" : "#FFDAD6",
-              color: isDark ? "#FFB4AB" : "#410002",
-              borderColor: isDark ? "rgba(255, 180, 171, 0.3)" : "rgba(186, 26, 26, 0.2)",
-              "& .MuiAlert-icon": {
-                color: isDark ? "#FFB4AB" : "#BA1A1A",
+          root: ({ ownerState }) => {
+            const isError = ownerState.severity === "error";
+            const isWarning = ownerState.severity === "warning";
+            const isSuccess = ownerState.severity === "success";
+            const isInfo = ownerState.severity === "info";
+
+            let bg = isDark ? "rgba(239, 68, 68, 0.18)" : "#FEF2F2";
+            let text = isDark ? "#FFE4E1" : "#991B1B";
+            let border = isDark ? "rgba(248, 113, 113, 0.55)" : "#FCA5A5";
+            let icon = isDark ? "#F87171" : "#DC2626";
+
+            if (isWarning) {
+              bg = isDark ? "rgba(245, 158, 11, 0.18)" : "#FFFBEB";
+              text = isDark ? "#FEF3C7" : "#92400E";
+              border = isDark ? "rgba(251, 191, 36, 0.55)" : "#FCD34D";
+              icon = isDark ? "#FBBF24" : "#D97706";
+            } else if (isSuccess) {
+              bg = isDark ? "rgba(34, 197, 94, 0.18)" : "#F0FDF4";
+              text = isDark ? "#DCFCE7" : "#166534";
+              border = isDark ? "rgba(74, 222, 128, 0.55)" : "#86EFAC";
+              icon = isDark ? "#4ADE80" : "#16A34A";
+            } else if (isInfo) {
+              bg = isDark ? "rgba(59, 130, 246, 0.18)" : "#EFF6FF";
+              text = isDark ? "#DBEAFE" : "#1E40AF";
+              border = isDark ? "rgba(96, 165, 250, 0.55)" : "#93C5FD";
+              icon = isDark ? "#60A5FA" : "#2563EB";
+            }
+
+            return {
+              borderRadius: 10,
+              border: `1px solid ${border}`,
+              backgroundColor: bg,
+              color: text,
+              fontSize: "0.875rem",
+              boxShadow: isDark
+                ? "0 4px 12px rgba(0, 0, 0, 0.35)"
+                : "0 1px 3px rgba(0, 0, 0, 0.05)",
+              "& .MuiAlert-message": {
+                color: text,
+                fontWeight: 600,
               },
-            }),
-            ...(ownerState.severity === "warning" && {
-              backgroundColor: isDark ? "rgba(255, 186, 40, 0.14)" : "#FFF8E1",
-              color: isDark ? "#FFBA28" : "#523600",
-              borderColor: isDark ? "rgba(255, 186, 40, 0.3)" : "rgba(154, 107, 0, 0.2)",
               "& .MuiAlert-icon": {
-                color: isDark ? "#FFBA28" : "#9A6B00",
+                color: icon,
               },
-            }),
-            ...(ownerState.severity === "success" && {
-              backgroundColor: isDark ? "rgba(123, 215, 141, 0.14)" : "#E8F5E9",
-              color: isDark ? "#7BD78D" : "#0F5132",
-              borderColor: isDark ? "rgba(123, 215, 141, 0.3)" : "rgba(30, 108, 48, 0.2)",
-              "& .MuiAlert-icon": {
-                color: isDark ? "#7BD78D" : "#1E6C30",
-              },
-            }),
-            ...(ownerState.severity === "info" && {
-              backgroundColor: isDark ? "rgba(123, 208, 255, 0.14)" : "#E7F0FF",
-              color: isDark ? "#7BD0FF" : "#003453",
-              borderColor: isDark ? "rgba(123, 208, 255, 0.3)" : "rgba(0, 99, 153, 0.2)",
-              "& .MuiAlert-icon": {
-                color: isDark ? "#7BD0FF" : "#006399",
-              },
-            }),
-          }),
+            };
+          },
         },
       },
       MuiOutlinedInput: {
