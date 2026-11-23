@@ -205,8 +205,11 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
             sx={{
               p: 1.75,
               borderRadius: 1.5,
-              bgcolor: "#FFF8F2",
-              border: "1px solid #FFE4D6",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 186, 40, 0.1)" : "#FFF8F2",
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 186, 40, 0.25)" : "#FFE4D6",
             }}
           >
             <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.75, color: "#9E3C00" }}>
@@ -216,7 +219,14 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
               </Typography>
             </Stack>
 
-            <Typography variant="body2" sx={{ fontWeight: 600, color: "#612100", mb: 0.5 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 600,
+                color: (theme) => (theme.palette.mode === "dark" ? "text.primary" : "#612100"),
+                mb: 0.5,
+              }}
+            >
               {ticket.escalationReason || "Причина эскалации не указана"}
             </Typography>
 

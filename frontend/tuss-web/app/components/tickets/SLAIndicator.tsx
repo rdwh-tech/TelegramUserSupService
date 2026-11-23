@@ -64,7 +64,8 @@ export const SLAIndicator: React.FC<SLAIndicatorProps> = ({ sla, label, showDeta
           px: 1.25,
           py: 0.4,
           borderRadius: 9999,
-          bgcolor: "#F1F4FB",
+          bgcolor: (theme) =>
+            theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#F1F4FB",
           color: "text.secondary",
           fontSize: "0.75rem",
           fontWeight: 600,

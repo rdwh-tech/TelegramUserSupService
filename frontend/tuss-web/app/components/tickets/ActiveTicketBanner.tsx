@@ -19,15 +19,22 @@ export const ActiveTicketBanner: React.FC<ActiveTicketBannerProps> = ({ activeTi
         mb: 3,
         p: { xs: 2, sm: 2.5 },
         borderRadius: 2,
-        bgcolor: "#FFF8E1",
-        border: "1px solid #FFE08A",
-        color: "#523600",
+        bgcolor: (theme) =>
+          theme.palette.mode === "dark" ? "rgba(255, 186, 40, 0.12)" : "#FFF8E1",
+        border: "1px solid",
+        borderColor: (theme) =>
+          theme.palette.mode === "dark" ? "rgba(255, 186, 40, 0.3)" : "#FFE08A",
+        color: (theme) =>
+          theme.palette.mode === "dark" ? "text.primary" : "#523600",
         display: "flex",
         flexDirection: { xs: "column", sm: "row" },
         alignItems: { xs: "flex-start", sm: "center" },
         justifyContent: "space-between",
         gap: 2,
-        boxShadow: "0 2px 8px rgba(154, 107, 0, 0.08)",
+        boxShadow: (theme) =>
+          theme.palette.mode === "dark"
+            ? "none"
+            : "0 2px 8px rgba(154, 107, 0, 0.08)",
       }}
     >
       <Stack direction="row" spacing={1.75} sx={{ alignItems: "center" }}>
@@ -36,8 +43,10 @@ export const ActiveTicketBanner: React.FC<ActiveTicketBannerProps> = ({ activeTi
             width: 44,
             height: 44,
             borderRadius: 1.5,
-            bgcolor: "#FFEBA7",
-            color: "#9A6B00",
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(255, 186, 40, 0.2)" : "#FFEBA7",
+            color: (theme) =>
+              theme.palette.mode === "dark" ? "#ffb951" : "#9A6B00",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -47,10 +56,24 @@ export const ActiveTicketBanner: React.FC<ActiveTicketBannerProps> = ({ activeTi
           <M3Icon name="lock" size={24} />
         </Box>
         <Box>
-          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#7A4E00" }}>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              fontWeight: 800,
+              color: (theme) =>
+                theme.palette.mode === "dark" ? "warning.main" : "#7A4E00",
+            }}
+          >
             Правило «В одни руки» активно
           </Typography>
-          <Typography variant="body2" sx={{ color: "#523600", mt: 0.25 }}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: (theme) =>
+                theme.palette.mode === "dark" ? "text.secondary" : "#523600",
+              mt: 0.25,
+            }}
+          >
             У вас уже есть открытое обращение <strong>#{activeTicket.ticketNumber}</strong> (
             {activeTicket.client.fullName}). Завершите или передайте его перед взятием нового.
           </Typography>
@@ -62,12 +85,12 @@ export const ActiveTicketBanner: React.FC<ActiveTicketBannerProps> = ({ activeTi
         component={Link}
         to="/tickets/active"
         sx={{
-          bgcolor: "#9A6B00",
-          color: "#FFFFFF",
+          bgcolor: (theme) => (theme.palette.mode === "dark" ? "warning.main" : "#9A6B00"),
+          color: (theme) => (theme.palette.mode === "dark" ? "#1A1100" : "#FFFFFF"),
           whiteSpace: "nowrap",
           alignSelf: { xs: "stretch", sm: "auto" },
           "&:hover": {
-            bgcolor: "#7A4E00",
+            bgcolor: (theme) => (theme.palette.mode === "dark" ? "warning.light" : "#7A4E00"),
           },
         }}
         startIcon={<M3Icon name="chat" size={18} />}

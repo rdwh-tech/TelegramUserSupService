@@ -104,8 +104,9 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
       data-testid="message-composer"
       sx={{
         p: 2,
-        borderTop: "1px solid rgba(196, 198, 208, 0.4)",
-        bgcolor: "#FFFFFF",
+        borderTop: "1px solid",
+        borderColor: "divider",
+        bgcolor: "background.paper",
       }}
     >
       {/* Ошибка валидации размера файла */}
@@ -135,7 +136,11 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
                   <M3Icon name="description" size={16} />
                 )
               }
-              sx={{ bgcolor: "#F1F4FB", borderRadius: 1 }}
+              sx={{
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#F1F4FB",
+                borderRadius: 1,
+              }}
             />
           ))}
         </Stack>
@@ -166,6 +171,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
                 bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#F8F9FE"),
                 border: "1px solid",
                 borderColor: "divider",
+                color: (theme) => (theme.palette.mode === "dark" ? "text.primary" : "primary.main"),
                 "&:hover": {
                   bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "#E7EDFA"),
                 },
@@ -206,6 +212,16 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
                   ? "rgba(255, 255, 255, 0.07)"
                   : "#FAFAFD",
               fontSize: "0.9375rem",
+              "& fieldset": {
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.15)" : "divider",
+              },
+              "&:hover fieldset": {
+                borderColor: "primary.main",
+              },
+              "&.Mui-focused fieldset": {
+                borderColor: "primary.main",
+              },
             },
           }}
         />
@@ -220,14 +236,20 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
               data-testid="send-message-button"
               sx={{
                 p: 1.25,
-                bgcolor: canSend ? "primary.main" : "#E2E2E6",
-                color: canSend ? "#FFFFFF" : "#74777F",
+                bgcolor: canSend
+                  ? "primary.main"
+                  : (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#E2E2E6"),
+                color: canSend
+                  ? "#FFFFFF"
+                  : (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.35)" : "#74777F"),
                 "&:hover": {
-                  bgcolor: canSend ? "primary.dark" : "#E2E2E6",
+                  bgcolor: canSend
+                    ? "primary.dark"
+                    : (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#E2E2E6"),
                 },
                 "&.Mui-disabled": {
-                  bgcolor: "#E2E2E6",
-                  color: "#A0A2AA",
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "#E2E2E6"),
+                  color: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.25)" : "#A0A2AA"),
                 },
               }}
             >

@@ -58,7 +58,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             px: 2,
             py: 0.75,
             borderRadius: 9999,
-            bgcolor: "#F1F4FB",
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#F1F4FB",
             color: "text.secondary",
             fontSize: "0.75rem",
             fontWeight: 600,
@@ -165,12 +166,31 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                     gap: 1.25,
                     p: 1.25,
                     borderRadius: 1.5,
-                    bgcolor: isOperator ? "rgba(255, 255, 255, 0.6)" : "#F1F4FB",
+                    bgcolor: isOperator
+                      ? (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(255, 255, 255, 0.15)"
+                            : "rgba(255, 255, 255, 0.6)"
+                      : (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(255, 255, 255, 0.08)"
+                            : "#F1F4FB",
                     color: "inherit",
                     textDecoration: "none",
-                    border: "1px solid rgba(196, 198, 208, 0.3)",
+                    border: "1px solid",
+                    borderColor: "divider",
                     maxWidth: 280,
-                    "&:hover": { bgcolor: isOperator ? "rgba(255, 255, 255, 0.8)" : "#E7ECF7" },
+                    "&:hover": {
+                      bgcolor: isOperator
+                        ? (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "rgba(255, 255, 255, 0.25)"
+                              : "rgba(255, 255, 255, 0.8)"
+                        : (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "rgba(255, 255, 255, 0.14)"
+                              : "#E7ECF7",
+                    },
                   }}
                 >
                   <M3Icon name="description" size={24} />

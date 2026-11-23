@@ -390,7 +390,10 @@ export default function TicketsArchiveRoute() {
                                 height: 34,
                                 fontSize: "0.8rem",
                                 fontWeight: 700,
-                                bgcolor: "#F1F4FB",
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.08)"
+                                    : "#F1F4FB",
                                 color: "text.primary",
                               }}
                             >

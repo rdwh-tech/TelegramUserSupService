@@ -183,7 +183,8 @@ export default function TicketsActiveRoute() {
                   width: 64,
                   height: 64,
                   borderRadius: "50%",
-                  bgcolor: "#F1F4FB",
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#F1F4FB",
                   color: "text.secondary",
                   display: "flex",
                   alignItems: "center",
