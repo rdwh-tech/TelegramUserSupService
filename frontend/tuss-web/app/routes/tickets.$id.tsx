@@ -18,6 +18,7 @@ import { ticketsApi } from "~/api/tickets";
 import { M3Icon } from "~/components/ui/M3Icon";
 import { M3Button } from "~/components/ui/M3Button";
 import { TicketSidebar } from "~/components/tickets/TicketSidebar";
+import { MessageList } from "~/components/chat/MessageList";
 import type { Ticket } from "~/types/ticket";
 import type { TicketMessage } from "~/types/message";
 
@@ -221,56 +222,8 @@ export default function TicketDetailsRoute() {
                 </Typography>
               </Box>
 
-              {/* Область переписки (сообщения) */}
-              <Box
-                data-testid="messages-area-placeholder"
-                sx={{
-                  flex: 1,
-                  p: 3,
-                  overflowY: "auto",
-                  bgcolor: "#FAFAFD",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 1.5,
-                }}
-              >
-                {messages.length === 0 ? (
-                  <Box sx={{ my: "auto", textAlign: "center", color: "text.secondary" }}>
-                    <M3Icon name="forum" size={40} />
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      История сообщений пока пуста. Напишите клиенту первым!
-                    </Typography>
-                  </Box>
-                ) : (
-                  messages.map((msg) => (
-                    <Box
-                      key={msg.id}
-                      data-testid={`message-${msg.id}`}
-                      sx={{
-                        alignSelf: msg.senderType === "operator" ? "flex-end" : "flex-start",
-                        maxWidth: "75%",
-                        p: 1.75,
-                        borderRadius: 3,
-                        bgcolor: msg.senderType === "operator" ? "#D8E2FF" : "#FFFFFF",
-                        color: msg.senderType === "operator" ? "#001A41" : "text.primary",
-                        border: "1px solid",
-                        borderColor:
-                          msg.senderType === "operator"
-                            ? "transparent"
-                            : "rgba(196, 198, 208, 0.4)",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                      }}
-                    >
-                      <Typography variant="caption" sx={{ fontWeight: 700, display: "block", mb: 0.5 }}>
-                        {msg.senderName || (msg.senderType === "operator" ? "Оператор" : "Клиент")}
-                      </Typography>
-                      <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                        {msg.text}
-                      </Typography>
-                    </Box>
-                  ))
-                )}
-              </Box>
+              {/* Область переписки (лента сообщений) */}
+              <MessageList messages={messages} />
             </Paper>
 
             {/* Правая зона: Информационный сайдбар тикета */}
