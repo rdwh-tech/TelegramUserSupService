@@ -38,7 +38,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
   if (user.isBlocked) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh", p: 2 }}>
-        <Card sx={{ maxWidth: 440, p: 3, textAlign: "center", borderRadius: 3 }}>
+        <Card sx={{ maxWidth: 440, p: 3, textAlign: "center", borderRadius: 2 }}>
           <CardContent>
             <Box sx={{ color: "error.main", mb: 1 }}>
               <M3Icon name="block" size={48} />
@@ -67,7 +67,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh", p: 2 }}>
-        <Card sx={{ maxWidth: 460, p: 3, textAlign: "center", borderRadius: 3 }}>
+        <Card sx={{ maxWidth: 460, p: 3, textAlign: "center", borderRadius: 2 }}>
           <CardContent>
             <Box sx={{ color: "warning.main", mb: 1 }}>
               <M3Icon name="lock" size={44} />

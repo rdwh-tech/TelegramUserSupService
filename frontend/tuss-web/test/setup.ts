@@ -22,6 +22,11 @@ Object.defineProperty(window, "matchMedia", {
   }),
 });
 
+// Mock для scrollIntoView в jsdom
+if (typeof window.HTMLElement.prototype.scrollIntoView !== "function") {
+  window.HTMLElement.prototype.scrollIntoView = () => {};
+}
+
 // Mock для navigator.clipboard
 Object.defineProperty(navigator, "clipboard", {
   writable: true,

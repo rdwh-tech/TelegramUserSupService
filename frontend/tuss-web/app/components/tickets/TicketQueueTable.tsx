@@ -52,7 +52,7 @@ export const TicketQueueTable: React.FC<TicketQueueTableProps> = ({
         elevation={0}
         data-testid="queue-skeleton-loading"
         sx={{
-          borderRadius: 4,
+          borderRadius: 2,
           border: "1px solid rgba(196, 198, 208, 0.4)",
           overflow: "hidden",
           bgcolor: "#FFFFFF",
@@ -122,7 +122,7 @@ export const TicketQueueTable: React.FC<TicketQueueTableProps> = ({
           py: 8,
           px: 3,
           textAlign: "center",
-          borderRadius: 4,
+          borderRadius: 2,
           border: "1px dashed rgba(196, 198, 208, 0.8)",
           bgcolor: "#F8F9FE",
         }}
@@ -158,7 +158,7 @@ export const TicketQueueTable: React.FC<TicketQueueTableProps> = ({
       elevation={0}
       data-testid="queue-table"
       sx={{
-        borderRadius: 4,
+        borderRadius: 2,
         border: "1px solid rgba(196, 198, 208, 0.4)",
         overflow: "hidden",
         bgcolor: "#FFFFFF",

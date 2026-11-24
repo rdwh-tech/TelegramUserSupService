@@ -82,14 +82,14 @@ export default function TicketsActiveRoute() {
         </Stack>
 
         {isLoading ? (
-          <Card sx={{ p: 4, borderRadius: 4 }}>
+          <Card sx={{ p: 4, borderRadius: 2 }}>
             <Skeleton variant="text" width="40%" height={32} sx={{ mb: 2 }} />
-            <Skeleton variant="rectangular" height={160} sx={{ borderRadius: 3 }} />
+            <Skeleton variant="rectangular" height={160} sx={{ borderRadius: 1.5 }} />
           </Card>
         ) : activeTicket ? (
           <Card
             sx={{
-              borderRadius: 4,
+              borderRadius: 2,
               border: "1px solid rgba(196, 198, 208, 0.4)",
               bgcolor: "#FFFFFF",
               overflow: "hidden",
@@ -126,7 +126,7 @@ export default function TicketsActiveRoute() {
                 elevation={0}
                 sx={{
                   p: 2,
-                  borderRadius: 3,
+                  borderRadius: 1.5,
                   bgcolor: "#F1F4FB",
                   border: "1px solid rgba(196, 198, 208, 0.4)",
                   mb: 3,
@@ -162,7 +162,7 @@ export default function TicketsActiveRoute() {
             sx={{
               p: 4,
               textAlign: "center",
-              borderRadius: 4,
+              borderRadius: 2,
               border: "1px solid",
               borderColor: "divider",
               bgcolor: "#FFFFFF",

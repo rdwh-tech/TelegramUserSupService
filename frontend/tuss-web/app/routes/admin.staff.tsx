@@ -33,7 +33,7 @@ export default function AdminStaffRoute() {
           </M3Button>
         </Stack>
 
-        <Card sx={{ p: 4, textAlign: "center", borderRadius: 3, border: "1px solid", borderColor: "divider" }}>
+        <Card sx={{ p: 4, textAlign: "center", borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
           <CardContent>
             <Box sx={{ color: "primary.main", mb: 1.5 }}>
               <M3Icon name="group" size={48} />

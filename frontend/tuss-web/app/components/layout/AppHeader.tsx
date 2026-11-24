@@ -204,7 +204,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               alignItems: "center",
               px: 1.5,
               py: 0.5,
-              borderRadius: 4,
+              borderRadius: 9999,
               backgroundColor: isConnected ? "rgba(46, 125, 50, 0.08)" : "rgba(211, 47, 47, 0.08)",
             }}
           >
