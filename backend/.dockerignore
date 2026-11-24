@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+.git
+.superpowers
+bin
+*.exe
+*.test
+coverage.out
+tests
+README.md
