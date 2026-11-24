@@ -1,0 +1,1 @@
+{"event_id":"10000000-0000-4000-8000-000000000007","event_type":"company.config_updated","schema_version":1,"occurred_at":"2026-11-19T12:00:00Z","company_id":"20000000-0000-4000-8000-000000000001","correlation_id":"30000000-0000-4000-8000-000000000007","payload":{"changed":["welcome_message","faq"]}}
