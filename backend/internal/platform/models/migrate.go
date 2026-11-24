@@ -63,143 +63,143 @@ func MigrateUp(db *gorm.DB) error {
 	// represented by the model tags. Every statement is safe to rerun.
 	constraints := []string{
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_bot_configs_company') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_bot_configs_company' AND conrelid = 'bot_configs'::regclass) THEN
 				ALTER TABLE bot_configs ADD CONSTRAINT fk_bot_configs_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_company_schedules_company') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_company_schedules_company' AND conrelid = 'company_schedules'::regclass) THEN
 				ALTER TABLE company_schedules ADD CONSTRAINT fk_company_schedules_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_company_sla_policies_company') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_company_sla_policies_company' AND conrelid = 'company_sla_policies'::regclass) THEN
 				ALTER TABLE company_sla_policies ADD CONSTRAINT fk_company_sla_policies_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_company_faqs_company') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_company_faqs_company' AND conrelid = 'company_faqs'::regclass) THEN
 				ALTER TABLE company_faqs ADD CONSTRAINT fk_company_faqs_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_users_company') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_users_company' AND conrelid = 'users'::regclass) THEN
 				ALTER TABLE users ADD CONSTRAINT fk_users_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_sessions_user') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_sessions_user' AND conrelid = 'user_sessions'::regclass) THEN
 				ALTER TABLE user_sessions ADD CONSTRAINT fk_user_sessions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_operator_connection_codes_operator') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_operator_connection_codes_operator' AND conrelid = 'operator_connection_codes'::regclass) THEN
 				ALTER TABLE operator_connection_codes ADD CONSTRAINT fk_operator_connection_codes_operator FOREIGN KEY (operator_id) REFERENCES users(id) ON DELETE CASCADE;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_company_invitations_company') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_company_invitations_company' AND conrelid = 'company_invitations'::regclass) THEN
 				ALTER TABLE company_invitations ADD CONSTRAINT fk_company_invitations_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_company_invitations_operator') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_company_invitations_operator' AND conrelid = 'company_invitations'::regclass) THEN
 				ALTER TABLE company_invitations ADD CONSTRAINT fk_company_invitations_operator FOREIGN KEY (operator_id) REFERENCES users(id) ON DELETE CASCADE;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_company_invitations_invited_by') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_company_invitations_invited_by' AND conrelid = 'company_invitations'::regclass) THEN
 				ALTER TABLE company_invitations ADD CONSTRAINT fk_company_invitations_invited_by FOREIGN KEY (invited_by_user_id) REFERENCES users(id);
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_clients_company') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_clients_company' AND conrelid = 'clients'::regclass) THEN
 				ALTER TABLE clients ADD CONSTRAINT fk_clients_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_tickets_company') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_tickets_company' AND conrelid = 'tickets'::regclass) THEN
 				ALTER TABLE tickets ADD CONSTRAINT fk_tickets_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE RESTRICT;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_tickets_client') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_tickets_client' AND conrelid = 'tickets'::regclass) THEN
 				ALTER TABLE tickets ADD CONSTRAINT fk_tickets_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_tickets_assigned_operator') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_tickets_assigned_operator' AND conrelid = 'tickets'::regclass) THEN
 				ALTER TABLE tickets ADD CONSTRAINT fk_tickets_assigned_operator FOREIGN KEY (assigned_operator_id) REFERENCES users(id) ON DELETE SET NULL;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_tickets_sla_policy') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_tickets_sla_policy' AND conrelid = 'tickets'::regclass) THEN
 				ALTER TABLE tickets ADD CONSTRAINT fk_tickets_sla_policy FOREIGN KEY (sla_policy_id) REFERENCES company_sla_policies(id);
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_tickets_escalated_by') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_tickets_escalated_by' AND conrelid = 'tickets'::regclass) THEN
 				ALTER TABLE tickets ADD CONSTRAINT fk_tickets_escalated_by FOREIGN KEY (escalated_by_user_id) REFERENCES users(id);
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ticket_status_history_ticket') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ticket_status_history_ticket' AND conrelid = 'ticket_status_history'::regclass) THEN
 				ALTER TABLE ticket_status_history ADD CONSTRAINT fk_ticket_status_history_ticket FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ticket_status_history_user') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ticket_status_history_user' AND conrelid = 'ticket_status_history'::regclass) THEN
 				ALTER TABLE ticket_status_history ADD CONSTRAINT fk_ticket_status_history_user FOREIGN KEY (changed_by_user_id) REFERENCES users(id);
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ticket_messages_ticket') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ticket_messages_ticket' AND conrelid = 'ticket_messages'::regclass) THEN
 				ALTER TABLE ticket_messages ADD CONSTRAINT fk_ticket_messages_ticket FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ticket_messages_sender_user') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ticket_messages_sender_user' AND conrelid = 'ticket_messages'::regclass) THEN
 				ALTER TABLE ticket_messages ADD CONSTRAINT fk_ticket_messages_sender_user FOREIGN KEY (sender_user_id) REFERENCES users(id);
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_message_attachments_message') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_message_attachments_message' AND conrelid = 'message_attachments'::regclass) THEN
 				ALTER TABLE message_attachments ADD CONSTRAINT fk_message_attachments_message FOREIGN KEY (message_id) REFERENCES ticket_messages(id) ON DELETE CASCADE;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ticket_ratings_ticket') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ticket_ratings_ticket' AND conrelid = 'ticket_ratings'::regclass) THEN
 				ALTER TABLE ticket_ratings ADD CONSTRAINT fk_ticket_ratings_ticket FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ticket_sla_metrics_ticket') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ticket_sla_metrics_ticket' AND conrelid = 'ticket_sla_metrics'::regclass) THEN
 				ALTER TABLE ticket_sla_metrics ADD CONSTRAINT fk_ticket_sla_metrics_ticket FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_broadcast_campaigns_company') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_broadcast_campaigns_company' AND conrelid = 'broadcast_campaigns'::regclass) THEN
 				ALTER TABLE broadcast_campaigns ADD CONSTRAINT fk_broadcast_campaigns_company FOREIGN KEY (company_id) REFERENCES companies(id);
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_broadcast_campaigns_created_by') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_broadcast_campaigns_created_by' AND conrelid = 'broadcast_campaigns'::regclass) THEN
 				ALTER TABLE broadcast_campaigns ADD CONSTRAINT fk_broadcast_campaigns_created_by FOREIGN KEY (created_by_user_id) REFERENCES users(id);
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_audit_logs_company') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_audit_logs_company' AND conrelid = 'audit_logs'::regclass) THEN
 				ALTER TABLE audit_logs ADD CONSTRAINT fk_audit_logs_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE;
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_audit_logs_user') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_audit_logs_user' AND conrelid = 'audit_logs'::regclass) THEN
 				ALTER TABLE audit_logs ADD CONSTRAINT fk_audit_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
 			END IF;
 		END $$`,
 
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_company_schedule_hours') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_company_schedule_hours' AND conrelid = 'company_schedules'::regclass) THEN
 				ALTER TABLE company_schedules ADD CONSTRAINT chk_company_schedule_hours CHECK (
 					is_working_day = FALSE OR
 					(start_time IS NOT NULL AND end_time IS NOT NULL AND end_time > start_time)
@@ -207,7 +207,7 @@ func MigrateUp(db *gorm.DB) error {
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_user_company_role') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_user_company_role' AND conrelid = 'users'::regclass) THEN
 				ALTER TABLE users ADD CONSTRAINT chk_user_company_role CHECK (
 					(company_id IS NULL AND role = 'unassigned_operator') OR
 					(company_id IS NOT NULL AND role <> 'unassigned_operator')
@@ -215,13 +215,13 @@ func MigrateUp(db *gorm.DB) error {
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_message_attachment_size') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_message_attachment_size' AND conrelid = 'message_attachments'::regclass) THEN
 				ALTER TABLE message_attachments ADD CONSTRAINT chk_message_attachment_size
 				CHECK (file_size_bytes > 0 AND file_size_bytes <= 20971520);
 			END IF;
 		END $$`,
 		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_ticket_rating_score') THEN
+			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_ticket_rating_score' AND conrelid = 'ticket_ratings'::regclass) THEN
 				ALTER TABLE ticket_ratings ADD CONSTRAINT chk_ticket_rating_score CHECK (score BETWEEN 1 AND 5);
 			END IF;
 		END $$`,
