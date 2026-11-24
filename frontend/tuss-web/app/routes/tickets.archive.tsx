@@ -138,7 +138,7 @@ export default function TicketsArchiveRoute() {
           }}
         >
           <div>
-            <Typography variant="h5" sx={{ fontWeight: 800 }}>
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
               Архив обращений
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -179,11 +179,12 @@ export default function TicketsArchiveRoute() {
             p: 2,
             mb: 3,
             borderRadius: 2,
-            border: "1px solid rgba(196, 198, 208, 0.4)",
+            border: "1px solid",
+            borderColor: "divider",
             display: "flex",
             flexDirection: { xs: "column", sm: "row" },
             gap: 2,
-            bgcolor: "#FFFFFF",
+            bgcolor: "background.paper",
           }}
         >
           <TextField
@@ -232,20 +233,22 @@ export default function TicketsArchiveRoute() {
             data-testid="archive-skeleton-loading"
             sx={{
               borderRadius: 2,
-              border: "1px solid rgba(196, 198, 208, 0.4)",
+              border: "1px solid",
+              borderColor: "divider",
               overflow: "hidden",
+              bgcolor: "background.paper",
             }}
           >
             <TableContainer>
               <Table>
-                <TableHead sx={{ bgcolor: "#F8F9FE" }}>
+                <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 700, width: 110 }}>№ Тикета</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 220 }}>Клиент</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Первое сообщение</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 180 }}>Оператор</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 160 }}>Дата закрытия</TableCell>
-                    <TableCell sx={{ fontWeight: 700, width: 130, textAlign: "right" }}>
+                    <TableCell sx={{ fontWeight: 600, width: 110 }}>№ Тикета</TableCell>
+                    <TableCell sx={{ fontWeight: 600, width: 220 }}>Клиент</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Первое сообщение</TableCell>
+                    <TableCell sx={{ fontWeight: 600, width: 180 }}>Оператор</TableCell>
+                    <TableCell sx={{ fontWeight: 600, width: 160 }}>Дата закрытия</TableCell>
+                    <TableCell sx={{ fontWeight: 600, width: 130, textAlign: "right" }}>
                       Действие
                     </TableCell>
                   </TableRow>
@@ -269,7 +272,7 @@ export default function TicketsArchiveRoute() {
                         <Skeleton variant="text" width={100} height={24} />
                       </TableCell>
                       <TableCell align="right">
-                        <Skeleton variant="rounded" width={90} height={32} sx={{ borderRadius: 9999, ml: "auto" }} />
+                        <Skeleton variant="rounded" width={90} height={32} sx={{ borderRadius: 1, ml: "auto" }} />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -286,8 +289,9 @@ export default function TicketsArchiveRoute() {
               px: 3,
               textAlign: "center",
               borderRadius: 2,
-              border: "1px dashed rgba(196, 198, 208, 0.8)",
-              bgcolor: "#F8F9FE",
+              border: "1px dashed",
+              borderColor: "divider",
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "#F8F9FE"),
             }}
           >
             <Box
@@ -295,7 +299,7 @@ export default function TicketsArchiveRoute() {
                 width: 64,
                 height: 64,
                 borderRadius: "50%",
-                bgcolor: "#E7F0FF",
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#E7F0FF"),
                 color: "primary.main",
                 display: "flex",
                 alignItems: "center",
@@ -321,32 +325,33 @@ export default function TicketsArchiveRoute() {
             data-testid="archive-table"
             sx={{
               borderRadius: 2,
-              border: "1px solid rgba(196, 198, 208, 0.4)",
+              border: "1px solid",
+              borderColor: "divider",
               overflow: "hidden",
-              bgcolor: "#FFFFFF",
+              bgcolor: "background.paper",
               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
             }}
           >
             <TableContainer>
               <Table sx={{ minWidth: 700 }}>
-                <TableHead sx={{ bgcolor: "#F8F9FE" }}>
+                <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", width: 110 }}>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary", width: 110 }}>
                       № Тикета
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", width: 220 }}>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary", width: 220 }}>
                       Клиент
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "text.secondary" }}>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary" }}>
                       Первое сообщение
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", width: 180 }}>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary", width: 180 }}>
                       Ответственный
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", width: 160 }}>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary", width: 160 }}>
                       Дата закрытия
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", width: 130, textAlign: "right" }}>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary", width: 130, textAlign: "right" }}>
                       Действие
                     </TableCell>
                   </TableRow>
@@ -372,7 +377,7 @@ export default function TicketsArchiveRoute() {
                         }}
                       >
                         {/* Номер */}
-                        <TableCell sx={{ fontWeight: 800, color: "text.secondary" }}>
+                        <TableCell sx={{ fontWeight: 600, color: "text.secondary" }}>
                           #{ticket.ticketNumber}
                         </TableCell>
 
@@ -385,7 +390,10 @@ export default function TicketsArchiveRoute() {
                                 height: 34,
                                 fontSize: "0.8rem",
                                 fontWeight: 700,
-                                bgcolor: "#F1F4FB",
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.08)"
+                                    : "#F1F4FB",
                                 color: "text.primary",
                               }}
                             >

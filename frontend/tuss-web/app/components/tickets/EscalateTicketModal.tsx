@@ -57,7 +57,7 @@ export const EscalateTicketModal: React.FC<EscalateTicketModalProps> = ({
       <DialogTitle sx={{ pb: 1 }}>
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
           <M3Icon name="call_made" size={24} />
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Передать обращение старшему оператору?
           </Typography>
         </Stack>

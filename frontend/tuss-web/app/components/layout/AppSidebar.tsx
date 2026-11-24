@@ -97,14 +97,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen }) => {
                     px: isOpen ? 2 : 0,
                     justifyContent: isOpen ? "initial" : "center",
                     alignItems: "center",
-                    backgroundColor: isActive ? "rgba(0, 90, 193, 0.12)" : "transparent",
+                    backgroundColor: isActive
+                      ? (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.12)" : `${theme.palette.primary.main}1A`)
+                      : "transparent",
                     color: isActive ? "primary.main" : "text.secondary",
                     fontWeight: isActive ? 600 : 500,
                     transition: "all 0.15s ease",
                     "&:hover": {
                       backgroundColor: isActive
-                        ? "rgba(0, 90, 193, 0.16)"
-                        : "rgba(0, 0, 0, 0.04)",
+                        ? (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.18)" : `${theme.palette.primary.main}26`)
+                        : (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)"),
                       color: "primary.main",
                     },
                   }}
@@ -192,9 +194,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen }) => {
                   display: "block",
                   color: "text.secondary",
                   fontWeight: 600,
-                  textTransform: "uppercase",
-                  fontSize: "0.65rem",
-                  letterSpacing: "0.05em",
+                  fontSize: "0.75rem",
                   width: "100%",
                 }}
               >

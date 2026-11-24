@@ -219,4 +219,38 @@ describe("TicketQueueTable Component", () => {
     expect(screen.getByText("Только аудит")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Взять в работу/i })).not.toBeInTheDocument();
   });
+
+  it("switches between cards grid and table view using the view toggle", async () => {
+    const user = userEvent.setup();
+
+    renderWithProviders(
+      <TicketQueueTable
+        tickets={mockSampleTickets}
+        isLoading={false}
+        level="l1"
+        hasActiveTicket={false}
+        isAdminAudit={false}
+        takingTicketId={null}
+        onTakeTicket={vi.fn()}
+        emptyTitle="Пусто"
+        emptySubtitle="Нет данных"
+      />
+    );
+
+    // По умолчанию отображаются карточки
+    expect(screen.getByTestId("queue-cards-grid")).toBeInTheDocument();
+    expect(screen.getByTestId("ticket-card-t-101")).toBeInTheDocument();
+
+    // Переключаем на таблицу
+    const tableButton = screen.getByTestId("queue-view-table-button");
+    await user.click(tableButton);
+
+    expect(screen.getByTestId("queue-table")).toBeInTheDocument();
+
+    // Переключаем обратно на карточки
+    const cardsButton = screen.getByTestId("queue-view-cards-button");
+    await user.click(cardsButton);
+
+    expect(screen.getByTestId("queue-cards-grid")).toBeInTheDocument();
+  });
 });

@@ -71,7 +71,7 @@ export default function TicketsActiveRoute() {
           }}
         >
           <div>
-            <Typography variant="h5" sx={{ fontWeight: 800 }}>
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
               Мой активный тикет
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -90,20 +90,28 @@ export default function TicketsActiveRoute() {
           <Card
             sx={{
               borderRadius: 2,
-              border: "1px solid rgba(196, 198, 208, 0.4)",
-              bgcolor: "#FFFFFF",
+              border: "1px solid",
+              borderColor: "divider",
+              bgcolor: "background.paper",
               overflow: "hidden",
               boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06)",
             }}
           >
-            <Box sx={{ p: 3, bgcolor: "#F8F9FE", borderBottom: "1px solid", borderColor: "divider" }}>
+            <Box
+              sx={{
+                p: 3,
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "#F8F9FE"),
+                borderBottom: "1px solid",
+                borderColor: "divider",
+              }}
+            >
               <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
                 <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-                  <Avatar sx={{ bgcolor: "primary.main", color: "#fff", fontWeight: 700 }}>
+                  <Avatar sx={{ bgcolor: "primary.main", color: "#fff", fontWeight: 600 }}>
                     {activeTicket.client.fullName?.[0] || "U"}
                   </Avatar>
                   <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary" }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: "text.primary" }}>
                       Тикет #{activeTicket.ticketNumber} — {activeTicket.client.fullName}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
@@ -127,8 +135,9 @@ export default function TicketsActiveRoute() {
                 sx={{
                   p: 2,
                   borderRadius: 1.5,
-                  bgcolor: "#F1F4FB",
-                  border: "1px solid rgba(196, 198, 208, 0.4)",
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#F1F4FB"),
+                  border: "1px solid",
+                  borderColor: "divider",
                   mb: 3,
                 }}
               >
@@ -165,7 +174,7 @@ export default function TicketsActiveRoute() {
               borderRadius: 2,
               border: "1px solid",
               borderColor: "divider",
-              bgcolor: "#FFFFFF",
+              bgcolor: "background.paper",
             }}
           >
             <CardContent>
@@ -174,7 +183,8 @@ export default function TicketsActiveRoute() {
                   width: 64,
                   height: 64,
                   borderRadius: "50%",
-                  bgcolor: "#F1F4FB",
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#F1F4FB",
                   color: "text.secondary",
                   display: "flex",
                   alignItems: "center",

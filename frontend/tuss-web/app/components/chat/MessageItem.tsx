@@ -57,8 +57,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           sx={{
             px: 2,
             py: 0.75,
-            borderRadius: 9999,
-            bgcolor: "#F1F4FB",
+            borderRadius: 1,
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#F1F4FB",
             color: "text.secondary",
             fontSize: "0.75rem",
             fontWeight: 600,
@@ -107,13 +108,23 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           borderRadius: 2,
           borderTopRightRadius: isOperator ? 0.5 : 2,
           borderTopLeftRadius: !isOperator ? 0.5 : 2,
-          bgcolor: isOperator ? "#D8E2FF" : "#FFFFFF",
-          color: isOperator ? "#001A41" : "text.primary",
-          border: isOperator ? "none" : "1px solid rgba(196, 198, 208, 0.4)",
+          bgcolor: isOperator
+            ? (theme) => (theme.palette.mode === "dark" ? `${theme.palette.primary.main}33` : theme.palette.primary.light)
+            : "background.paper",
+          color: isOperator
+            ? (theme) => (theme.palette.mode === "dark" ? "#FFFFFF" : "#001A41")
+            : "text.primary",
+          border: isOperator ? "none" : "1px solid",
+          borderColor: "divider",
           boxShadow: isOperator
-            ? "0 1px 4px rgba(0, 90, 193, 0.12)"
-            : "0 1px 4px rgba(0, 0, 0, 0.05)",
+            ? "0 1px 3px rgba(0, 0, 0, 0.08)"
+            : "0 1px 3px rgba(0, 0, 0, 0.04)",
           wordBreak: "break-word",
+          animation: "msgFadeIn 0.18s ease-out",
+          "@keyframes msgFadeIn": {
+            from: { opacity: 0, transform: "translateY(4px)" },
+            to: { opacity: 1, transform: "translateY(0)" },
+          },
         }}
       >
         {/* Вложения (если есть) */}
@@ -155,12 +166,31 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                     gap: 1.25,
                     p: 1.25,
                     borderRadius: 1.5,
-                    bgcolor: isOperator ? "rgba(255, 255, 255, 0.6)" : "#F1F4FB",
+                    bgcolor: isOperator
+                      ? (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(255, 255, 255, 0.15)"
+                            : "rgba(255, 255, 255, 0.6)"
+                      : (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(255, 255, 255, 0.08)"
+                            : "#F1F4FB",
                     color: "inherit",
                     textDecoration: "none",
-                    border: "1px solid rgba(196, 198, 208, 0.3)",
+                    border: "1px solid",
+                    borderColor: "divider",
                     maxWidth: 280,
-                    "&:hover": { bgcolor: isOperator ? "rgba(255, 255, 255, 0.8)" : "#E7ECF7" },
+                    "&:hover": {
+                      bgcolor: isOperator
+                        ? (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "rgba(255, 255, 255, 0.25)"
+                              : "rgba(255, 255, 255, 0.8)"
+                        : (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "rgba(255, 255, 255, 0.14)"
+                              : "#E7ECF7",
+                    },
                   }}
                 >
                   <M3Icon name="description" size={24} />

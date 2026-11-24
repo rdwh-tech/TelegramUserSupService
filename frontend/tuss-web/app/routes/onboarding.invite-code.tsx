@@ -135,7 +135,7 @@ export default function OnboardingInviteCodeRoute() {
               width: 56,
               height: 56,
               borderRadius: "12px",
-              backgroundColor: "rgba(0, 90, 193, 0.08)",
+              backgroundColor: (theme) => `${theme.palette.primary.main}18`,
               color: "primary.main",
               display: "flex",
               alignItems: "center",
@@ -172,7 +172,7 @@ export default function OnboardingInviteCodeRoute() {
             <Typography
               variant="h4"
               sx={{
-                fontWeight: 800,
+                fontWeight: 700,
                 letterSpacing: "0.25em",
                 fontFamily: "monospace",
                 color: "primary.main",
@@ -258,7 +258,7 @@ export default function OnboardingInviteCodeRoute() {
                             width: 38,
                             height: 38,
                             borderRadius: 1.5,
-                            bgcolor: "rgba(0, 90, 193, 0.08)",
+                            bgcolor: (theme) => `${theme.palette.primary.main}18`,
                             color: "primary.main",
                             display: "flex",
                             alignItems: "center",

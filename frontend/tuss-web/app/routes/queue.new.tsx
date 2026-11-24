@@ -116,7 +116,7 @@ export default function QueueNewRoute() {
           }}
         >
           <div>
-            <Typography variant="h5" sx={{ fontWeight: 800, color: "text.primary" }}>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: "text.primary" }}>
               Новые обращения
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>

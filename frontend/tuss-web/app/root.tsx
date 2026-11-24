@@ -7,10 +7,9 @@ import {
   ScrollRestoration,
 } from "react-router";
 
-import { ThemeProvider, CssBaseline } from "@mui/material";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "~/api/queryClient";
-import { m3Theme } from "~/theme/m3Theme";
+import { AppThemeProvider } from "~/context/ThemeContext";
 import { AuthProvider } from "~/context/AuthContext";
 
 import type { Route } from "./+types/root";
@@ -41,14 +40,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <title></title>
       </head>
       <body>
-        {/* TanStack Query + Material 3 ThemeProvider */}
+        {/* TanStack Query + Dynamic Material 3 AppThemeProvider */}
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider theme={m3Theme}>
-            <CssBaseline />
+          <AppThemeProvider>
             <AuthProvider>
               {children}
             </AuthProvider>
-          </ThemeProvider>
+          </AppThemeProvider>
         </QueryClientProvider>
         <ScrollRestoration />
         <Scripts />

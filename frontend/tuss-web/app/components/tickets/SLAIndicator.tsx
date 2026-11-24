@@ -63,8 +63,9 @@ export const SLAIndicator: React.FC<SLAIndicatorProps> = ({ sla, label, showDeta
           gap: 0.5,
           px: 1.25,
           py: 0.4,
-          borderRadius: 9999,
-          bgcolor: "#F1F4FB",
+          borderRadius: 1,
+          bgcolor: (theme) =>
+            theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#F1F4FB",
           color: "text.secondary",
           fontSize: "0.75rem",
           fontWeight: 600,
@@ -128,18 +129,19 @@ export const SLAIndicator: React.FC<SLAIndicatorProps> = ({ sla, label, showDeta
         sx={{
           display: "inline-flex",
           alignItems: "center",
-          gap: 0.75,
-          px: 1.5,
-          py: 0.5,
-          borderRadius: 9999,
+          gap: 0.6,
+          px: 1.25,
+          py: 0.4,
+          borderRadius: 1.5,
           bgcolor: config.bg,
           color: config.text,
           border: `1px solid ${config.border}`,
-          fontSize: "0.8125rem",
-          fontWeight: 700,
+          fontSize: "0.75rem",
+          fontWeight: 600,
+          fontVariantNumeric: "tabular-nums",
           whiteSpace: "nowrap",
           cursor: "default",
-          transition: "all 0.2s ease-in-out",
+          transition: "background-color 0.15s ease, border-color 0.15s ease",
         }}
       >
         <M3Icon name={config.icon} size={16} />

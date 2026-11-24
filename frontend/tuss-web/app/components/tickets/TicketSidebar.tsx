@@ -62,8 +62,9 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
         width: { xs: "100%", md: 340 },
         flexShrink: 0,
         borderRadius: 2,
-        border: "1px solid rgba(196, 198, 208, 0.4)",
-        bgcolor: "#FFFFFF",
+        border: "1px solid",
+        borderColor: "divider",
+        bgcolor: "background.paper",
         p: 2.5,
         display: "flex",
         flexDirection: "column",
@@ -73,11 +74,11 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
     >
       {/* 1. Заголовок и статус обращения */}
       <Box>
-        <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}>
+        <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
           Информация об обращении
         </Typography>
         <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mt: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: "primary.main" }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "primary.main" }}>
             #{ticket.ticketNumber}
           </Typography>
           <Chip
@@ -85,7 +86,7 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
             color={statusCfg.color}
             size="small"
             icon={<M3Icon name={statusCfg.icon} size={16} />}
-            sx={{ fontWeight: 700 }}
+            sx={{ fontWeight: 600 }}
           />
         </Stack>
       </Box>
@@ -94,7 +95,7 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
 
       {/* 2. Карточка клиента в Telegram */}
       <Box data-testid="client-profile-card">
-        <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}>
+        <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
           Клиент Telegram
         </Typography>
 
@@ -105,14 +106,14 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
               height: 44,
               bgcolor: "primary.light",
               color: "primary.main",
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: "1rem",
             }}
           >
             {clientInitials}
           </Avatar>
           <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "text.primary" }} noWrap>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "text.primary" }} noWrap>
               {ticket.client.fullName}
             </Typography>
             {ticket.client.username ? (
@@ -142,7 +143,15 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
           </Box>
         </Stack>
 
-        <Stack spacing={0.75} sx={{ mt: 2, bgcolor: "#F8F9FE", p: 1.5, borderRadius: 1.5 }}>
+        <Stack
+          spacing={0.75}
+          sx={{
+            mt: 2,
+            bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "#F8F9FE"),
+            p: 1.5,
+            borderRadius: 1.5,
+          }}
+        >
           <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
             <Typography variant="caption" color="text.secondary">
               ID пользователя:
@@ -166,7 +175,7 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
 
       {/* 3. Мониторинг регламента SLA */}
       <Box data-testid="sla-monitor-section">
-        <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}>
+        <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
           Контроль регламента SLA
         </Typography>
 
@@ -196,18 +205,28 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
             sx={{
               p: 1.75,
               borderRadius: 1.5,
-              bgcolor: "#FFF8F2",
-              border: "1px solid #FFE4D6",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 186, 40, 0.1)" : "#FFF8F2",
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 186, 40, 0.25)" : "#FFE4D6",
             }}
           >
             <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.75, color: "#9E3C00" }}>
               <M3Icon name="call_made" size={18} />
-              <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase" }}>
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>
                 Эскалировано на L2
               </Typography>
             </Stack>
 
-            <Typography variant="body2" sx={{ fontWeight: 600, color: "#612100", mb: 0.5 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 600,
+                color: (theme) => (theme.palette.mode === "dark" ? "text.primary" : "#612100"),
+                mb: 0.5,
+              }}
+            >
               {ticket.escalationReason || "Причина эскалации не указана"}
             </Typography>
 
@@ -228,12 +247,13 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
             sx={{
               p: 1.5,
               borderRadius: 1.5,
-              bgcolor: "#F1F8F3",
-              border: "1px solid #D1E7DD",
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(46, 125, 50, 0.15)" : "#F1F8F3"),
+              border: "1px solid",
+              borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(46, 125, 50, 0.3)" : "#D1E7DD"),
               textAlign: "center",
             }}
           >
-            <Typography variant="caption" sx={{ fontWeight: 700, color: "#0F5132", display: "block" }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, color: (theme) => (theme.palette.mode === "dark" ? "#7BD78D" : "#0F5132"), display: "block" }}>
               Тикет завершен
             </Typography>
             <Typography variant="caption" color="text.secondary">
@@ -246,8 +266,9 @@ export const TicketSidebar: React.FC<TicketSidebarProps> = ({
             sx={{
               p: 1.5,
               borderRadius: 1.5,
-              bgcolor: "#F8F9FE",
-              border: "1px solid rgba(196, 198, 208, 0.4)",
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "#F8F9FE"),
+              border: "1px solid",
+              borderColor: "divider",
               textAlign: "center",
             }}
           >

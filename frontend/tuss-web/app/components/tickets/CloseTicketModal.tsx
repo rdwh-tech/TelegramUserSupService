@@ -58,7 +58,7 @@ export const CloseTicketModal: React.FC<CloseTicketModalProps> = ({
       <DialogTitle sx={{ pb: 1 }}>
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
           <M3Icon name="task_alt" size={24} />
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Завершить обслуживание по тикету #{ticketNumber}?
           </Typography>
         </Stack>
@@ -71,9 +71,13 @@ export const CloseTicketModal: React.FC<CloseTicketModalProps> = ({
             mb: 2.5,
             p: 1.75,
             borderRadius: 1.5,
-            bgcolor: "#F1F8F3",
-            border: "1px solid #D1E7DD",
-            color: "#0F5132",
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(46, 125, 50, 0.15)" : "#F1F8F3",
+            border: "1px solid",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(46, 125, 50, 0.3)" : "#D1E7DD",
+            color: (theme) =>
+              theme.palette.mode === "dark" ? "#81c784" : "#0F5132",
           }}
         >
           <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>

@@ -86,7 +86,8 @@ export const MessageList: React.FC<MessageListProps> = ({
             width: 56,
             height: 56,
             borderRadius: "50%",
-            bgcolor: "#F1F4FB",
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#F1F4FB",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -136,12 +137,15 @@ export const MessageList: React.FC<MessageListProps> = ({
               label={group.dateKey}
               size="small"
               sx={{
-                bgcolor: "#F1F4FB",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#F1F4FB",
                 color: "text.secondary",
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: "0.75rem",
-                borderRadius: 9999,
-                border: "1px solid rgba(196, 198, 208, 0.4)",
+                borderRadius: 1,
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.15)" : "divider",
               }}
             />
           </Box>
