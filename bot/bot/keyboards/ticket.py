@@ -1,9 +1,12 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-import texts
-from keyboards.callbacks import CANCEL_CREATE_TICKET, CONFIRM_CREATE_TICKET, NEW_TICKET, REOPEN_TICKET
+
+from .. import texts
+from .callbacks import (
+    CANCEL_CREATE_TICKET,
+    CONFIRM_CREATE_TICKET,
+    NEW_TICKET,
+    REOPEN_TICKET,
+)
 
 def confirm_ticket_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[

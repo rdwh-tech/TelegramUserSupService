@@ -1,8 +1,6 @@
 from pathlib import PurePath
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-import texts
+
+from .. import texts
 
 MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024
 ALLOWED_DOCUMENT_EXTENSIONS = {".pdf", ".docx", ".txt", ".zip"}

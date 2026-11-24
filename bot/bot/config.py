@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     REDIS_URL: SecretStr = SecretStr("redis://localhost:6379/0")
     RABBITMQ_URL: SecretStr = SecretStr("amqp://guest:guest@localhost/")
     MQ_ENABLED: bool = False # Заглушка потребителя
-    MQ_QUEUE: str = "" # По умолчанию bot_events.<COMPANY_ID>
+    MQ_QUEUE: str = "" # По умолчанию bot.<COMPANY_ID>.events
 
     # Прочее
     LOG_LEVEL: str = "INFO"

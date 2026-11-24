@@ -1,10 +1,14 @@
 import unittest
 from types import SimpleNamespace as NS
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from bot import texts
-from bot.services.message_utils import (MAX_FILE_SIZE_BYTES, extract_payload, split_text, truncate, validate_attachment)
+from bot.services.message_utils import (
+    MAX_FILE_SIZE_BYTES,
+    extract_payload,
+    split_text,
+    truncate,
+    validate_attachment,
+)
 
 def msg(**kw):
     base = dict(text=None, caption=None, photo=None, document=None, sticker=None, animation=None,

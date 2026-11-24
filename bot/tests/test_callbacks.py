@@ -1,9 +1,5 @@
-import sys
-from pathlib import Path
-# эта штука нужна, чтобы мы могли импортировать подпакет keyboards из пакета bot
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 import unittest
+
 from bot.keyboards import callbacks as cb
 
 class CallbackDataTests(unittest.TestCase):

@@ -1,10 +1,14 @@
 import logging
+
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-import texts
-from keyboards.callbacks import BACK_TO_MAIN, NEW_TICKET, OPEN_FAQ, build_faq_data
+
+from .. import texts
+from .callbacks import (
+    BACK_TO_MAIN,
+    NEW_TICKET,
+    OPEN_FAQ,
+    build_faq_data,
+)
 
 log = logging.getLogger(__name__)
 
