@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     API_BASE_URL: str = "http://localhost:8000"
     API_MODE: Literal["stub", "http"] = "stub" # Заглушка (stub) и настоящий API (http)
     API_TIMEOUT: int = 10
+    API_SERVICE_TOKEN: SecretStr = SecretStr("")
 
     # Хранилища / брокер
     REDIS_URL: SecretStr = SecretStr("redis://localhost:6379/0")
@@ -30,7 +31,7 @@ class Settings(BaseSettings):
 
     @property
     def mq_queue_name(self) -> str:
-        return self.MQ_QUEUE or f"bot_events.{self.COMPANY_ID}"
+        return self.MQ_QUEUE or f"bot.{self.COMPANY_ID}.events"
 
 @lru_cache
 def get_settings() -> Settings:
