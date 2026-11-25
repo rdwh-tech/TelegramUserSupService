@@ -24,7 +24,7 @@ func main() {
 	}
 }
 
-func runMigration(ctx context.Context, dsn string) error {
+func runMigration(ctx context.Context, dsn string) (runErr error) {
 	if dsn == "" {
 		return errors.New("DSN is required")
 	}
@@ -36,8 +36,12 @@ func runMigration(ctx context.Context, dsn string) error {
 	if err != nil {
 		return errors.New("database pool unavailable")
 	}
-	defer sqlDB.Close()
-	if err := models.MigrateUp(db.DB.WithContext(ctx)); err != nil {
+	defer func() {
+		if err := sqlDB.Close(); err != nil && runErr == nil {
+			runErr = errors.New("database close failed")
+		}
+	}()
+	if err := models.MigrateUp(db.WithContext(ctx)); err != nil {
 		return errors.New("database schema migration failed")
 	}
 	return nil

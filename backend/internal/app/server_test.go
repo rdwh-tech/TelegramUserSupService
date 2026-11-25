@@ -97,9 +97,11 @@ func TestServeDrainsRequest(t *testing.T) {
 	case err := <-responseError:
 		t.Fatal(err)
 	case response := <-responseResult:
-		defer response.Body.Close()
 		body, err := io.ReadAll(response.Body)
 		if err != nil {
+			t.Fatal(err)
+		}
+		if err := response.Body.Close(); err != nil {
 			t.Fatal(err)
 		}
 		if response.StatusCode != http.StatusOK || string(body) != "drained" {
@@ -149,7 +151,10 @@ func TestServeShutdownDeadline(t *testing.T) {
 		t.Fatal("forced close did not cancel handler")
 	}
 	select {
-	case <-requestResult:
+	case err := <-requestResult:
+		if err == nil {
+			t.Fatal("request unexpectedly succeeded after forced server close")
+		}
 	case <-time.After(time.Second):
 		t.Fatal("client remained blocked")
 	}

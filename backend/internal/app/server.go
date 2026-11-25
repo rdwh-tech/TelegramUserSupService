@@ -27,12 +27,16 @@ func serve(ctx context.Context, server *http.Server, listener net.Listener, shut
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		_ = server.Close()
-		<-serveResult
-		if errors.Is(err, context.DeadlineExceeded) {
-			return fmt.Errorf("server shutdown deadline exceeded: %w", err)
+		closeErr := server.Close()
+		serveErr := <-serveResult
+		if errors.Is(serveErr, http.ErrServerClosed) {
+			serveErr = nil
 		}
-		return fmt.Errorf("server shutdown: %w", err)
+		shutdownErr := errors.Join(err, closeErr, serveErr)
+		if errors.Is(err, context.DeadlineExceeded) {
+			return fmt.Errorf("server shutdown deadline exceeded: %w", shutdownErr)
+		}
+		return fmt.Errorf("server shutdown: %w", shutdownErr)
 	}
 
 	if err := <-serveResult; err != nil && !errors.Is(err, http.ErrServerClosed) {
