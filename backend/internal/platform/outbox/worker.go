@@ -59,8 +59,13 @@ func NewWorker(queue Queue, publisher Publisher, config WorkerConfig) (*Worker, 
 	return &Worker{queue: queue, publisher: publisher, config: config, id: uuid.New(), now: time.Now}, nil
 }
 
-func (w *Worker) Run(ctx context.Context) error {
-	defer w.publisher.Close()
+func (w *Worker) Run(ctx context.Context) (runErr error) {
+	defer func() {
+		if err := w.publisher.Close(); err != nil {
+			closeErr := fmt.Errorf("outbox: close publisher: %w", err)
+			runErr = errors.Join(runErr, closeErr)
+		}
+	}()
 	ticker := time.NewTicker(w.config.PollInterval)
 	defer ticker.Stop()
 	for {

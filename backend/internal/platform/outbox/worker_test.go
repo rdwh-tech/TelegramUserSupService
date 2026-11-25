@@ -37,6 +37,7 @@ func (q *fakeQueue) MarkFailed(_ context.Context, eventID, _ uuid.UUID, retryAt 
 type fakePublisher struct {
 	messages []Message
 	err      error
+	closeErr error
 	closed   bool
 }
 
@@ -44,7 +45,7 @@ func (p *fakePublisher) Publish(_ context.Context, message Message) error {
 	p.messages = append(p.messages, message)
 	return p.err
 }
-func (p *fakePublisher) Close() error { p.closed = true; return nil }
+func (p *fakePublisher) Close() error { p.closed = true; return p.closeErr }
 
 func validWorkerConfig() WorkerConfig {
 	return WorkerConfig{
@@ -160,6 +161,23 @@ func TestWorkerRunStopsAndClosesPublisher(t *testing.T) {
 	}
 	if !publisher.closed {
 		t.Fatal("publisher was not closed")
+	}
+}
+
+func TestWorkerRunReturnsPublisherCloseError(t *testing.T) {
+	want := errors.New("close failed")
+	queue := &fakeQueue{}
+	publisher := &fakePublisher{closeErr: want}
+	config := validWorkerConfig()
+	config.PollInterval = time.Hour
+	worker, err := NewWorker(queue, publisher, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := worker.Run(ctx); !errors.Is(err, want) {
+		t.Fatalf("Run error=%v, want %v", err, want)
 	}
 }
 
