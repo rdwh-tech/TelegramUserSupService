@@ -205,3 +205,96 @@ func TestNewDatabaseUsesSafeDefaults(t *testing.T) {
 		t.Fatalf("ping database opened by compatibility wrapper: %v", err)
 	}
 }
+
+func TestWithinCompanyAppliesDenyByDefaultRLS(t *testing.T) {
+	dsn := isolatedDSN(t)
+	db, err := Open(context.Background(), testDBConfig(dsn))
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB, err := db.DB.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = sqlDB.Close() })
+	if err := models.MigrateUp(db.DB); err != nil {
+		t.Fatal(err)
+	}
+	firstCompany, secondCompany := uuid.New(), uuid.New()
+	if err := db.Exec(`INSERT INTO companies (id, name) VALUES (?, 'First'), (?, 'Second')`, firstCompany, secondCompany).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec(`INSERT INTO clients (company_id, telegram_user_id, telegram_chat_id) VALUES (?, 101, 201), (?, 102, 202)`, firstCompany, secondCompany).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	var count int64
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec(`SET LOCAL ROLE support_api_svc`).Error; err != nil {
+			return err
+		}
+		return tx.Raw(`SELECT count(*) FROM clients`).Scan(&count).Error
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if count != 0 {
+		t.Fatalf("RLS without company context returned %d rows", count)
+	}
+	if err := WithinCompany(context.Background(), db.DB, firstCompany, func(tx *gorm.DB) error {
+		return ForCompany(tx, firstCompany).Model(&models.Client{}).Count(&count).Error
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if count != 1 {
+		t.Fatalf("tenant query returned %d rows, want 1", count)
+	}
+	if err := WithinCompany(context.Background(), db.DB, firstCompany, func(tx *gorm.DB) error {
+		return ForCompany(tx, secondCompany).Model(&models.Client{}).Count(&count).Error
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if count != 0 {
+		t.Fatalf("cross-tenant explicit query returned %d rows", count)
+	}
+}
+
+func TestAnalyticsRoleUsesColumnAllowlistAndSeparateBypass(t *testing.T) {
+	dsn := isolatedDSN(t)
+	db, err := Open(context.Background(), testDBConfig(dsn))
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB, err := db.DB.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = sqlDB.Close() })
+	if err := models.MigrateUp(db.DB); err != nil {
+		t.Fatal(err)
+	}
+
+	checks := map[string]bool{
+		`SELECT has_column_privilege('analytics_svc', format('%I.users', current_schema()), 'id', 'SELECT')`:                     true,
+		`SELECT has_column_privilege('analytics_svc', format('%I.users', current_schema()), 'password_hash', 'SELECT')`:          false,
+		`SELECT has_column_privilege('analytics_svc', format('%I.ticket_messages', current_schema()), 'content', 'SELECT')`:      false,
+		`SELECT has_table_privilege('analytics_svc', format('%I.bot_configs', current_schema()), 'SELECT')`:                      false,
+		`SELECT has_table_privilege('analytics_svc', format('%I.message_attachments', current_schema()), 'SELECT')`:              false,
+		`SELECT has_table_privilege('analytics_svc', format('%I.ticket_sla_metrics', current_schema()), 'INSERT,UPDATE,SELECT')`: true,
+	}
+	for query, want := range checks {
+		var got bool
+		if err := db.Raw(query).Scan(&got).Error; err != nil {
+			t.Fatal(err)
+		}
+		if got != want {
+			t.Fatalf("privilege check %q=%t, want %t", query, got, want)
+		}
+	}
+	var bypass bool
+	if err := db.Raw(`SELECT rolbypassrls FROM pg_roles WHERE rolname = 'analytics_background_svc'`).Scan(&bypass).Error; err != nil {
+		t.Fatal(err)
+	}
+	if !bypass {
+		t.Fatal("analytics background role has no RLS bypass")
+	}
+}

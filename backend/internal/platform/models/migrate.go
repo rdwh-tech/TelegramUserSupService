@@ -2,8 +2,12 @@ package models
 
 import (
 	"fmt"
+
+	"github.com/rdwh-tech/TelegramUserSupService/migrations"
 	"gorm.io/gorm"
 )
+
+const baselineTableCount = 18
 
 // MigrateUp creates PostgreSQL enum types, tables, constraints and indexes.
 // Run this against an empty database or an existing database managed by this schema.
@@ -13,6 +17,31 @@ func MigrateUp(db *gorm.DB) error {
 		return fmt.Errorf("db is nil")
 	}
 
+	var tableCount int64
+	if err := db.Raw(`SELECT count(*) FROM information_schema.tables
+		WHERE table_schema = current_schema() AND table_type = 'BASE TABLE'
+		  AND table_name IN ('companies','bot_configs','company_schedules','company_sla_policies',
+		  'company_faqs','users','user_sessions','operator_connection_codes','company_invitations',
+		  'clients','tickets','ticket_status_history','ticket_messages','message_attachments',
+		  'ticket_ratings','ticket_sla_metrics','broadcast_campaigns','audit_logs')`).Scan(&tableCount).Error; err != nil {
+		return fmt.Errorf("inspect baseline schema: %w", err)
+	}
+	if tableCount != 0 && tableCount != baselineTableCount {
+		return fmt.Errorf("incomplete baseline schema: found %d of %d tables", tableCount, baselineTableCount)
+	}
+	if tableCount == 0 {
+		if err := migrateBaseline(db); err != nil {
+			return err
+		}
+	}
+	if err := migrations.Apply(db); err != nil {
+		return fmt.Errorf("apply versioned migrations: %w", err)
+	}
+	return nil
+}
+
+func migrateBaseline(db *gorm.DB) error {
+
 	// PostgreSQL enum types must exist before AutoMigrate creates columns using them.
 	enumSQL := []string{
 		`DO $$ BEGIN CREATE TYPE user_role AS ENUM ('admin','operator_l1','operator_l2','unassigned_operator'); EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
@@ -20,9 +49,10 @@ func MigrateUp(db *gorm.DB) error {
 		`DO $$ BEGIN CREATE TYPE invitation_status AS ENUM ('pending','accepted','rejected','expired'); EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
 		`DO $$ BEGIN CREATE TYPE ticket_status AS ENUM ('new','in_progress','waiting_client','closed'); EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
 		`DO $$ BEGIN CREATE TYPE escalation_level AS ENUM ('l1','l2'); EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
-		`DO $$ BEGIN CREATE TYPE status_trigger_type AS ENUM ('operator_take','operator_escalate','operator_wait_client','client_message','operator_close','operator_reopen','system_reassign'); EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
+		`DO $$ BEGIN CREATE TYPE status_trigger_type AS ENUM ('operator_take','operator_escalate','operator_wait_client','client_message','operator_close','operator_reopen','client_reopen','system_reassign'); EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
 		`DO $$ BEGIN CREATE TYPE message_sender_type AS ENUM ('client','operator','system'); EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
 		`DO $$ BEGIN CREATE TYPE attachment_file_type AS ENUM ('photo','document'); EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
+		`DO $$ BEGIN CREATE TYPE message_delivery_status AS ENUM ('pending','delivered','failed'); EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
 		`DO $$ BEGIN CREATE TYPE sla_status AS ENUM ('ok','warning','breached','paused'); EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
 		`DO $$ BEGIN CREATE TYPE broadcast_status AS ENUM ('draft','in_progress','completed','failed'); EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
 		`DO $$ BEGIN CREATE TYPE audit_action_type AS ENUM ('login','logout','user_blocked','user_unblocked','user_expelled','role_changed','invitation_sent','invitation_accepted','invitation_rejected','company_settings_updated','sla_settings_updated','bot_settings_updated','schedule_updated'); EXCEPTION WHEN duplicate_object THEN NULL; END $$`,
@@ -209,7 +239,7 @@ func MigrateUp(db *gorm.DB) error {
 		`DO $$ BEGIN
 			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_user_company_role' AND conrelid = 'users'::regclass) THEN
 				ALTER TABLE users ADD CONSTRAINT chk_user_company_role CHECK (
-					(company_id IS NULL AND role = 'unassigned_operator') OR
+					(company_id IS NULL AND role IN ('admin', 'unassigned_operator')) OR
 					(company_id IS NOT NULL AND role <> 'unassigned_operator')
 				);
 			END IF;
@@ -228,7 +258,7 @@ func MigrateUp(db *gorm.DB) error {
 		`CREATE UNIQUE INDEX IF NOT EXISTS idx_uq_active_ticket_per_client
 			ON tickets(company_id, client_id) WHERE status <> 'closed'`,
 		`CREATE UNIQUE INDEX IF NOT EXISTS idx_uq_active_ticket_per_operator
-			ON tickets(assigned_operator_id) WHERE status = 'in_progress' AND assigned_operator_id IS NOT NULL`,
+			ON tickets(assigned_operator_id) WHERE status IN ('in_progress', 'waiting_client') AND assigned_operator_id IS NOT NULL`,
 		`CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at)`,
 	}
 
@@ -249,6 +279,12 @@ func MigrateDown(db *gorm.DB) error {
 	}
 
 	dropSQL := []string{
+		`DROP TABLE IF EXISTS outbox_events CASCADE`,
+		`DROP TABLE IF EXISTS outbox_sequences CASCADE`,
+		`DROP TABLE IF EXISTS idempotency_records CASCADE`,
+		`DROP TABLE IF EXISTS ticket_cycles CASCADE`,
+		`DROP TABLE IF EXISTS company_schedule_versions CASCADE`,
+		`DROP TABLE IF EXISTS schema_migrations CASCADE`,
 		`DROP TABLE IF EXISTS audit_logs CASCADE`,
 		`DROP TABLE IF EXISTS broadcast_campaigns CASCADE`,
 		`DROP TABLE IF EXISTS ticket_sla_metrics CASCADE`,
@@ -271,6 +307,7 @@ func MigrateDown(db *gorm.DB) error {
 		`DROP TYPE IF EXISTS broadcast_status`,
 		`DROP TYPE IF EXISTS sla_status`,
 		`DROP TYPE IF EXISTS attachment_file_type`,
+		`DROP TYPE IF EXISTS message_delivery_status`,
 		`DROP TYPE IF EXISTS message_sender_type`,
 		`DROP TYPE IF EXISTS status_trigger_type`,
 		`DROP TYPE IF EXISTS escalation_level`,

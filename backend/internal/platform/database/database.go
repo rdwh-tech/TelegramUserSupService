@@ -80,6 +80,12 @@ var baselineTables = []string{
 	"ticket_sla_metrics",
 	"broadcast_campaigns",
 	"audit_logs",
+	"company_schedule_versions",
+	"ticket_cycles",
+	"idempotency_records",
+	"outbox_sequences",
+	"outbox_events",
+	"schema_migrations",
 }
 
 func Ready(ctx context.Context, db *Db) error {

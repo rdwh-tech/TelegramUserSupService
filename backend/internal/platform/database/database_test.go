@@ -3,6 +3,8 @@ package database
 import (
 	"context"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 func TestReadyRejectsUninitializedDatabase(t *testing.T) {
@@ -19,5 +21,11 @@ func TestReadyRejectsUninitializedDatabase(t *testing.T) {
 				t.Fatal("uninitialized database reported ready")
 			}
 		})
+	}
+}
+
+func TestWithinCompanyRejectsMissingInputs(t *testing.T) {
+	if err := WithinCompany(context.Background(), nil, uuid.New(), nil); err == nil {
+		t.Fatal("nil database accepted")
 	}
 }
