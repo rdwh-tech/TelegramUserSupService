@@ -19,7 +19,11 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
-	defer sqlDb.Close()
+	defer func() {
+		if err := sqlDb.Close(); err != nil {
+			log.Printf("failed to close db: %v", err)
+		}
+	}()
 
 	listener, err := net.Listen("tcp", cfg.Server.HTTPAddr)
 	if err != nil {
