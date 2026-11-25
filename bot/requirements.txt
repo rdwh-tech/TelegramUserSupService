@@ -1,0 +1,5 @@
+aiogram>=3.13,<4
+pydantic-settings>=2.2,<3
+redis>=5,<7
+aio-pika>=9.4,<10
+httpx>=0.27,<1
