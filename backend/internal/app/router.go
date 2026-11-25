@@ -9,9 +9,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rdwh-tech/TelegramUserSupService/internal/transport/httpjson"
+	webtransport "github.com/rdwh-tech/TelegramUserSupService/internal/transport/web"
 )
 
 func NewRouter(checkReady func(context.Context) error, readinessTimeout time.Duration, logger *slog.Logger) http.Handler {
+	return NewRouterWithAuth(checkReady, readinessTimeout, logger, nil)
+}
+
+func NewRouterWithAuth(checkReady func(context.Context) error, readinessTimeout time.Duration, logger *slog.Logger, authHandler *webtransport.Handler) http.Handler {
 	r := chi.NewRouter()
 	r.Use(RequestID)
 	r.Use(AccessLog(logger))
@@ -38,5 +43,8 @@ func NewRouter(checkReady func(context.Context) error, readinessTimeout time.Dur
 		}
 		httpjson.Write(w, http.StatusOK, map[string]string{"status": "ready"})
 	})
+	if authHandler != nil {
+		authHandler.Routes(r)
+	}
 	return r
 }
