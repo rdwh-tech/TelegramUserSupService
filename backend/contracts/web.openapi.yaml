@@ -1,0 +1,239 @@
+openapi: 3.0.3
+info:
+  title: Support web API
+  version: 1.0.0-target
+  description: Target public contract. API-01 publishes it; business operations are implemented in later cards.
+servers:
+  - url: /api
+security:
+  - userBearer: []
+paths:
+  /auth/register:
+    post:
+      security: []
+      operationId: register
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/RegisterRequest' } } } }
+      responses:
+        '201': { description: Registered without a company, content: { application/json: { schema: { $ref: '#/components/schemas/AuthResponse' } } } }
+        default: { $ref: '#/components/responses/Error' }
+  /auth/login:
+    post:
+      security: []
+      operationId: login
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/LoginRequest' } } } }
+      responses:
+        '200': { description: Authenticated, content: { application/json: { schema: { $ref: '#/components/schemas/AuthResponse' } } } }
+        default: { $ref: '#/components/responses/Error' }
+  /auth/refresh:
+    post:
+      security: []
+      operationId: refresh
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/RefreshRequest' } } } }
+      responses:
+        '200': { description: New access token, content: { application/json: { schema: { $ref: '#/components/schemas/RefreshResponse' } } } }
+        default: { $ref: '#/components/responses/Error' }
+  /auth/logout:
+    post:
+      operationId: logout
+      responses:
+        '204': { description: Session revoked }
+        default: { $ref: '#/components/responses/Error' }
+  /auth/me:
+    get:
+      operationId: getMe
+      responses: { '200': { description: Current user, content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } }, default: { $ref: '#/components/responses/Error' } }
+  /company:
+    post:
+      operationId: createCompany
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateCompany' } } } }
+      responses: { '201': { description: Company and attached admin, content: { application/json: { schema: { $ref: '#/components/schemas/CompanyWithUser' } } } }, default: { $ref: '#/components/responses/Error' } }
+    get:
+      operationId: getCompany
+      responses: { '200': { description: Company, content: { application/json: { schema: { $ref: '#/components/schemas/Company' } } } }, default: { $ref: '#/components/responses/Error' } }
+    put:
+      operationId: updateCompany
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UpdateCompany' } } } }
+      responses: { '200': { description: Company, content: { application/json: { schema: { $ref: '#/components/schemas/Company' } } } }, default: { $ref: '#/components/responses/Error' } }
+  /operator/connection-code:
+    get:
+      operationId: getConnectionCode
+      responses: { '200': { description: Active code, content: { application/json: { schema: { $ref: '#/components/schemas/ConnectionCode' } } } }, default: { $ref: '#/components/responses/Error' } }
+  /operator/invitations/pending:
+    get:
+      operationId: getPendingInvitations
+      responses: { '200': { description: Pending invitations, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Invitation' } } } } }, default: { $ref: '#/components/responses/Error' } }
+  /operator/invitations/{invitationId}/accept:
+    parameters: [{ $ref: '#/components/parameters/InvitationID' }]
+    post:
+      operationId: acceptInvitation
+      responses: { '200': { description: Attached operator, content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } }, default: { $ref: '#/components/responses/Error' } }
+  /operator/invitations/{invitationId}/reject:
+    parameters: [{ $ref: '#/components/parameters/InvitationID' }]
+    post:
+      operationId: rejectInvitation
+      responses: { '204': { description: Rejected }, default: { $ref: '#/components/responses/Error' } }
+  /tickets/queue/l1:
+    get: { operationId: listL1Queue, responses: { '200': { $ref: '#/components/responses/TicketList' }, default: { $ref: '#/components/responses/Error' } } }
+  /tickets/queue/l2:
+    get: { operationId: listL2Queue, responses: { '200': { $ref: '#/components/responses/TicketList' }, default: { $ref: '#/components/responses/Error' } } }
+  /tickets/my-active:
+    get:
+      operationId: getMyActiveTicket
+      responses: { '200': { description: Ticket or null, content: { application/json: { schema: { $ref: '#/components/schemas/NullableTicket' } } } }, default: { $ref: '#/components/responses/Error' } }
+  /tickets/{ticketId}:
+    parameters: [{ $ref: '#/components/parameters/TicketID' }]
+    get: { operationId: getTicket, responses: { '200': { $ref: '#/components/responses/Ticket' }, default: { $ref: '#/components/responses/Error' } } }
+  /tickets/{ticketId}/assign:
+    parameters: [{ $ref: '#/components/parameters/TicketID' }]
+    post: { operationId: assignTicket, responses: { '200': { $ref: '#/components/responses/Ticket' }, default: { $ref: '#/components/responses/Error' } } }
+  /tickets/{ticketId}/escalate:
+    parameters: [{ $ref: '#/components/parameters/TicketID' }]
+    post:
+      operationId: escalateTicket
+      requestBody: { content: { application/json: { schema: { type: object, properties: { reason: { type: string } } } } } }
+      responses: { '200': { $ref: '#/components/responses/Ticket' }, default: { $ref: '#/components/responses/Error' } }
+  /tickets/{ticketId}/close:
+    parameters: [{ $ref: '#/components/parameters/TicketID' }]
+    post:
+      operationId: closeTicket
+      requestBody: { content: { application/json: { schema: { type: object, properties: { resolutionNotes: { type: string } } } } } }
+      responses: { '200': { $ref: '#/components/responses/Ticket' }, default: { $ref: '#/components/responses/Error' } }
+  /tickets/{ticketId}/messages:
+    parameters: [{ $ref: '#/components/parameters/TicketID' }]
+    get: { operationId: listTicketMessages, responses: { '200': { description: Chronological messages, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Message' } } } } }, default: { $ref: '#/components/responses/Error' } } }
+    post:
+      operationId: sendOperatorMessage
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { type: object, required: [text], properties: { text: { type: string } } } }
+          multipart/form-data: { schema: { type: object, required: [text], properties: { text: { type: string }, files: { type: array, items: { type: string, format: binary } } } } }
+      responses: { '201': { description: Pending message, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } }, default: { $ref: '#/components/responses/Error' } }
+  /company/bot:
+    get: { operationId: getCompanyBot, responses: { '200': { description: Bot configuration with masked token, content: { application/json: { schema: { $ref: '#/components/schemas/BotConfig' } } } }, default: { $ref: '#/components/responses/Error' } } }
+    put:
+      operationId: updateCompanyBot
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UpdateBotConfig' } } } }
+      responses: { '200': { description: Bot configuration, content: { application/json: { schema: { $ref: '#/components/schemas/BotConfig' } } } }, default: { $ref: '#/components/responses/Error' } }
+  /company/schedule:
+    get: { operationId: getCompanySchedule, responses: { '200': { description: Seven days, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/DaySchedule' }, minItems: 7, maxItems: 7 } } } }, default: { $ref: '#/components/responses/Error' } } }
+    put:
+      operationId: updateCompanySchedule
+      requestBody: { required: true, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/UpdateDaySchedule' }, minItems: 1, maxItems: 7 } } } }
+      responses: { '200': { description: Schedule, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/DaySchedule' } } } } }, default: { $ref: '#/components/responses/Error' } }
+  /company/sla:
+    get: { operationId: getCompanySLA, responses: { '200': { description: Active SLA policy, content: { application/json: { schema: { $ref: '#/components/schemas/SLAPolicy' } } } }, default: { $ref: '#/components/responses/Error' } } }
+    put:
+      operationId: updateCompanySLA
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UpdateSLAPolicy' } } } }
+      responses: { '200': { description: New policy version, content: { application/json: { schema: { $ref: '#/components/schemas/SLAPolicy' } } } }, default: { $ref: '#/components/responses/Error' } }
+  /company/faqs:
+    get: { operationId: listCompanyFAQs, responses: { '200': { description: FAQs, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/FAQ' } } } } }, default: { $ref: '#/components/responses/Error' } } }
+    post:
+      operationId: createCompanyFAQ
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateFAQ' } } } }
+      responses: { '201': { description: FAQ, content: { application/json: { schema: { $ref: '#/components/schemas/FAQ' } } } }, default: { $ref: '#/components/responses/Error' } }
+  /company/faqs/{faqId}:
+    parameters: [{ $ref: '#/components/parameters/FAQID' }]
+    put:
+      operationId: updateCompanyFAQ
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UpdateFAQ' } } } }
+      responses: { '200': { description: FAQ, content: { application/json: { schema: { $ref: '#/components/schemas/FAQ' } } } }, default: { $ref: '#/components/responses/Error' } }
+    delete:
+      operationId: deleteCompanyFAQ
+      responses: { '204': { description: Deleted }, default: { $ref: '#/components/responses/Error' } }
+components:
+  securitySchemes:
+    userBearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    TicketID: { name: ticketId, in: path, required: true, schema: { type: string, format: uuid } }
+    InvitationID: { name: invitationId, in: path, required: true, schema: { type: string, format: uuid } }
+    FAQID: { name: faqId, in: path, required: true, schema: { type: string, format: uuid } }
+  responses:
+    Error: { description: Contract error, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } } }
+    Ticket: { description: Ticket, content: { application/json: { schema: { $ref: '#/components/schemas/Ticket' } } } }
+    TicketList: { description: Array shape preserved for the existing client, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Ticket' } } } } }
+  schemas:
+    UserRole: { type: string, enum: [admin, operator_l1, operator_l2, unassigned_operator] }
+    User:
+      type: object
+      required: [id, companyId, login, fullName, role, isBlocked, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        companyId: { type: string, format: uuid, nullable: true }
+        companyName: { type: string, nullable: true }
+        login: { type: string }
+        fullName: { type: string }
+        role: { $ref: '#/components/schemas/UserRole' }
+        isBlocked: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    LoginRequest: { type: object, required: [login, password], properties: { login: { type: string }, password: { type: string, format: password } } }
+    RegisterRequest: { type: object, required: [login, password, fullName, role], properties: { login: { type: string }, password: { type: string, format: password }, fullName: { type: string }, role: { type: string, enum: [operator, admin] } } }
+    RefreshRequest: { type: object, required: [refreshToken], properties: { refreshToken: { type: string } } }
+    RefreshResponse: { type: object, required: [accessToken], properties: { accessToken: { type: string } } }
+    AuthResponse: { type: object, required: [accessToken, refreshToken, user], properties: { accessToken: { type: string }, refreshToken: { type: string }, user: { $ref: '#/components/schemas/User' } } }
+    Company:
+      type: object
+      required: [id, name, isActive, createdAt, updatedAt]
+      properties: { id: { type: string, format: uuid }, name: { type: string }, description: { type: string, nullable: true }, isActive: { type: boolean }, createdAt: { type: string, format: date-time }, updatedAt: { type: string, format: date-time } }
+    CreateCompany: { type: object, required: [name], properties: { name: { type: string }, description: { type: string }, timezone: { type: string } } }
+    UpdateCompany: { type: object, properties: { name: { type: string }, description: { type: string } } }
+    CompanyWithUser: { type: object, required: [company, user], properties: { company: { $ref: '#/components/schemas/Company' }, user: { $ref: '#/components/schemas/User' } } }
+    ConnectionCode: { type: object, required: [id, operatorId, code, expiresAt, isUsed], properties: { id: { type: string, format: uuid }, operatorId: { type: string, format: uuid }, code: { type: string }, expiresAt: { type: string, format: date-time }, isUsed: { type: boolean } } }
+    Invitation: { type: object, required: [id, companyId, companyName, operatorId, roleToAssign, status, createdAt], properties: { id: { type: string, format: uuid }, companyId: { type: string, format: uuid }, companyName: { type: string }, operatorId: { type: string, format: uuid }, roleToAssign: { type: string, enum: [operator_l1, operator_l2] }, status: { type: string, enum: [pending, accepted, rejected, expired] }, createdAt: { type: string, format: date-time } } }
+    Client: { type: object, required: [id, companyId, telegramUserId, telegramChatId, username, fullName, createdAt], properties: { id: { type: string, format: uuid }, companyId: { type: string, format: uuid }, telegramUserId: { type: integer, format: int64 }, telegramChatId: { type: integer, format: int64 }, username: { type: string, nullable: true }, fullName: { type: string }, createdAt: { type: string, format: date-time } } }
+    Ticket:
+      type: object
+      required: [id, ticketNumber, companyId, clientId, client, assignedOperatorId, slaPolicyId, status, escalationLevel, firstMessagePreview, escalationReason, escalatedByUserId, escalatedAt, firstResponseAt, closedAt, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        ticketNumber: { type: integer }
+        companyId: { type: string, format: uuid }
+        clientId: { type: string, format: uuid }
+        client: { $ref: '#/components/schemas/Client' }
+        assignedOperatorId: { type: string, format: uuid, nullable: true }
+        assignedOperatorName: { type: string, nullable: true }
+        slaPolicyId: { type: string, format: uuid }
+        status: { type: string, enum: [new, in_progress, waiting_client, closed] }
+        escalationLevel: { type: string, enum: [l1, l2] }
+        firstMessagePreview: { type: string, nullable: true }
+        escalationReason: { type: string, nullable: true }
+        escalatedByUserId: { type: string, format: uuid, nullable: true }
+        escalatedByUserName: { type: string, nullable: true }
+        escalatedAt: { type: string, format: date-time, nullable: true }
+        firstResponseAt: { type: string, format: date-time, nullable: true }
+        closedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        sla: { $ref: '#/components/schemas/TicketSLA' }
+    NullableTicket:
+      oneOf:
+        - { $ref: '#/components/schemas/Ticket' }
+        - { type: object, nullable: true, enum: [null] }
+    SLATimerInfo:
+      type: object
+      required: [status, remainingSeconds, formattedTime, isPaused]
+      properties:
+        status: { type: string, enum: [ok, warning, breached, paused] }
+        remainingSeconds: { type: integer }
+        formattedTime: { type: string }
+        isPaused: { type: boolean }
+    TicketSLA:
+      type: object
+      required: [frt, ttr]
+      properties:
+        frt: { $ref: '#/components/schemas/SLATimerInfo' }
+        ttr: { $ref: '#/components/schemas/SLATimerInfo' }
+    Message: { type: object, required: [id, ticketId, senderType, text, isDelivered, createdAt], properties: { id: { type: string, format: uuid }, ticketId: { type: string, format: uuid }, senderType: { type: string, enum: [client, operator, system] }, senderUserId: { type: string, format: uuid, nullable: true }, senderName: { type: string, nullable: true }, text: { type: string }, attachments: { type: array, items: { $ref: '#/components/schemas/Attachment' } }, isDelivered: { type: boolean }, createdAt: { type: string, format: date-time } } }
+    Attachment: { type: object, required: [id, messageId, fileType, fileUrl, fileName, fileSizeBytes], properties: { id: { type: string, format: uuid }, messageId: { type: string, format: uuid }, fileType: { type: string, enum: [photo, document] }, fileUrl: { type: string }, fileName: { type: string }, fileSizeBytes: { type: integer } } }
+    BotConfig: { type: object, required: [id, companyId, botToken, botUsername, welcomeMessage, isConnected, createdAt, updatedAt], properties: { id: { type: string, format: uuid }, companyId: { type: string, format: uuid }, botToken: { type: string, description: Masked value only }, botUsername: { type: string, nullable: true }, welcomeMessage: { type: string }, isConnected: { type: boolean }, createdAt: { type: string, format: date-time }, updatedAt: { type: string, format: date-time } } }
+    UpdateBotConfig: { type: object, properties: { botToken: { type: string, format: password, writeOnly: true }, welcomeMessage: { type: string } } }
+    DaySchedule: { type: object, required: [id, companyId, dayOfWeek, isWorkingDay, startTime, endTime, timezone], properties: { id: { type: string, format: uuid }, companyId: { type: string, format: uuid }, dayOfWeek: { type: integer, minimum: 1, maximum: 7 }, isWorkingDay: { type: boolean }, startTime: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$', nullable: true }, endTime: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$', nullable: true }, timezone: { type: string } } }
+    UpdateDaySchedule: { type: object, required: [dayOfWeek, isWorkingDay], properties: { dayOfWeek: { type: integer, minimum: 1, maximum: 7 }, isWorkingDay: { type: boolean }, startTime: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$', nullable: true }, endTime: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$', nullable: true } } }
+    SLAPolicy: { type: object, required: [id, companyId, version, frtLimitMinutesL1, ttrLimitMinutesL1, artLimitMinutesL1, frtLimitMinutesL2, ttrLimitMinutesL2, artLimitMinutesL2, isActive, createdAt], properties: { id: { type: string, format: uuid }, companyId: { type: string, format: uuid }, version: { type: integer }, frtLimitMinutesL1: { type: integer }, ttrLimitMinutesL1: { type: integer }, artLimitMinutesL1: { type: integer }, frtLimitMinutesL2: { type: integer }, ttrLimitMinutesL2: { type: integer }, artLimitMinutesL2: { type: integer }, isActive: { type: boolean }, createdAt: { type: string, format: date-time } } }
+    UpdateSLAPolicy: { type: object, required: [frtLimitMinutesL1, ttrLimitMinutesL1], properties: { frtLimitMinutesL1: { type: integer, minimum: 1 }, ttrLimitMinutesL1: { type: integer, minimum: 1 }, frtLimitMinutesL2: { type: integer, minimum: 1 }, ttrLimitMinutesL2: { type: integer, minimum: 1 } } }
+    FAQ: { type: object, required: [id, companyId, question, answer, sortOrder, isActive, createdAt, updatedAt], properties: { id: { type: string, format: uuid }, companyId: { type: string, format: uuid }, question: { type: string }, answer: { type: string }, sortOrder: { type: integer }, isActive: { type: boolean }, createdAt: { type: string, format: date-time }, updatedAt: { type: string, format: date-time } } }
+    CreateFAQ: { type: object, required: [question, answer], properties: { question: { type: string, minLength: 1 }, answer: { type: string, minLength: 1 }, sortOrder: { type: integer } } }
+    UpdateFAQ: { type: object, properties: { question: { type: string, minLength: 1 }, answer: { type: string, minLength: 1 }, sortOrder: { type: integer }, isActive: { type: boolean } } }
+    ErrorEnvelope: { type: object, required: [error], properties: { error: { type: object, required: [code, message, request_id], properties: { code: { type: string }, message: { type: string }, details: { nullable: true }, request_id: { type: string, format: uuid } } } } }

@@ -24,6 +24,13 @@ export const ticketsHandlers = [
     return HttpResponse.json(l2Tickets);
   }),
 
+  // Архив закрытых тикетов (FR-API-3, [TUSS-FE-16])
+  http.get("*/api/tickets/archive", async () => {
+    await delay(250);
+    const closedTickets = mockTickets.filter((t) => t.status === "closed");
+    return HttpResponse.json(closedTickets);
+  }),
+
   // Мой активный тикет ("в одни руки") (FR-WEB-8)
   http.get("*/api/tickets/my-active", async () => {
     await delay(200);
@@ -59,7 +66,13 @@ export const ticketsHandlers = [
 
     const ticketIndex = mockTickets.findIndex((t) => t.id === params.id);
     if (ticketIndex === -1) {
-      return HttpResponse.json({ message: "Тикет уже взят другим оператором" }, { status: 404 });
+      return HttpResponse.json(
+        {
+          code: "TICKET_ALREADY_TAKEN",
+          message: "Обращение уже взято в работу другим оператором",
+        },
+        { status: 409 }
+      );
     }
 
     const targetTicket = mockTickets[ticketIndex];

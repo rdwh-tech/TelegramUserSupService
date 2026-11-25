@@ -108,11 +108,14 @@ export default function LoginRoute() {
           width: "100%",
           maxWidth: 440,
           p: { xs: 2.5, sm: 4 },
-          background: "rgba(255, 255, 255, 0.88)",
-          backdropFilter: "blur(20px)",
-          boxShadow: "0 16px 40px -12px rgba(0, 45, 110, 0.08), 0 2px 6px rgba(0, 0, 0, 0.02)",
-          borderRadius: 4,
-          border: "1px solid rgba(255, 255, 255, 0.85)",
+          bgcolor: "background.paper",
+          boxShadow: (theme) =>
+            theme.palette.mode === "dark"
+              ? "0 12px 32px rgba(0, 0, 0, 0.45)"
+              : "0 8px 30px rgba(0, 0, 0, 0.06)",
+          borderRadius: 2,
+          border: "1px solid",
+          borderColor: "divider",
         }}
       >
         <CardContent sx={{ p: 0 }}>
@@ -128,16 +131,15 @@ export default function LoginRoute() {
           >
             <Box
               sx={{
-                width: 50,
-                height: 50,
-                borderRadius: "16px",
-                background: "linear-gradient(135deg, #005AC1 0%, #1E78E9 100%)",
-                color: "#FFFFFF",
+                width: 48,
+                height: 48,
+                borderRadius: 1.5,
+                bgcolor: "primary.main",
+                color: "primary.contrastText",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 mb: 1.5,
-                boxShadow: "0 8px 20px rgba(0, 90, 193, 0.22)",
               }}
             >
               <M3Icon name="headset_mic" size={26} />
@@ -145,7 +147,7 @@ export default function LoginRoute() {
             <Typography
               variant="h5"
               sx={{
-                fontWeight: 700,
+                fontWeight: 600,
                 letterSpacing: "-0.01em",
                 color: "text.primary",
               }}
@@ -161,7 +163,7 @@ export default function LoginRoute() {
           {errorMessage && (
             <Alert
               severity="error"
-              sx={{ mb: 3, borderRadius: 2 }}
+              sx={{ mb: 3, borderRadius: 1.5 }}
               icon={<M3Icon name="error" size={20} />}
             >
               {errorMessage}
@@ -268,13 +270,23 @@ export default function LoginRoute() {
             <Link
               to="/register"
               style={{
-                color: "#005AC1",
+                color: "inherit",
                 textDecoration: "none",
                 fontWeight: 600,
                 fontSize: "0.875rem",
               }}
             >
-              Зарегистрироваться
+              <Typography
+                component="span"
+                sx={{
+                  color: "primary.main",
+                  fontWeight: 600,
+                  fontSize: "0.875rem",
+                  "&:hover": { textDecoration: "underline" },
+                }}
+              >
+                Зарегистрироваться
+              </Typography>
             </Link>
           </Stack>
         </CardContent>

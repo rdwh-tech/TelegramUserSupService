@@ -57,7 +57,7 @@ export default function OnboardingCreateCompanyRoute() {
         <Card
           sx={{
             p: { xs: 3, sm: 4 },
-            borderRadius: 4,
+            borderRadius: 2,
             border: "1px solid",
             borderColor: "divider",
             boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)",
@@ -67,8 +67,8 @@ export default function OnboardingCreateCompanyRoute() {
             sx={{
               width: 56,
               height: 56,
-              borderRadius: "16px",
-              backgroundColor: "rgba(0, 90, 193, 0.08)",
+              borderRadius: "12px",
+              backgroundColor: (theme) => `${theme.palette.primary.main}18`,
               color: "primary.main",
               display: "flex",
               alignItems: "center",
@@ -92,13 +92,13 @@ export default function OnboardingCreateCompanyRoute() {
           </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+            <Alert severity="error" sx={{ mb: 3, borderRadius: 1.5 }}>
               {error}
             </Alert>
           )}
 
           {created ? (
-            <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>
+            <Alert severity="success" sx={{ mb: 3, borderRadius: 1.5 }}>
               Компания «{name}» успешно создана! Перенаправление в панель управления...
             </Alert>
           ) : (

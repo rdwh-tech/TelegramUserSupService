@@ -2,41 +2,44 @@ name: CI
 
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "dev", "web-redesign", "feature/**" ]
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "dev", "web-redesign", "feature/**" ]
+  workflow_dispatch:
 
 jobs:
   # ─────────────────────────────────────────
-  # Telegram Bot (Python)
+  # Frontend Web Panel (React Router / TypeScript)
   # ─────────────────────────────────────────
-  test-bot:
-    name: 🤖 Bot (Python)
+  test-and-build-web:
+    name: 🖥️ Web Panel (Test & Build)
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: bot
+        working-directory: frontend/tuss-web
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: "3.11"
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: frontend/tuss-web/package-lock.json
 
       - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-cov
+        run: npm ci
 
-      - name: Run tests
-        run: pytest --cov=. --cov-report=term-missing
+      - name: Type check
+        run: npm run typecheck
 
-  # ─────────────────────────────────────────
-  # Backend API (Golang)
-  # ─────────────────────────────────────────
+      - name: Run unit & integration tests
+        run: npm run test
+
+      - name: Build production bundle
+        run: npm run build
   test-backend:
     name: ⚙️ Backend (Go)
     runs-on: ubuntu-latest
@@ -50,7 +53,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
 
       - name: Download dependencies
         run: go mod download
@@ -58,61 +62,17 @@ jobs:
       - name: Run vet
         run: go vet ./...
 
-      - name: Run tests
-        run: go test ./... -v -coverprofile=coverage.out
+      - name: Build
+        run: go build ./...
 
-  # ─────────────────────────────────────────
-  # SLA Service (Python)
-  # ─────────────────────────────────────────
-  test-sla:
-    name: ⏱️ SLA Service (Python)
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: sla
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Lint
+        uses: golangci/golangci-lint-action@v7
         with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-cov
+          version: latest
+          working-directory: backend
 
       - name: Run tests
-        run: pytest --cov=. --cov-report=term-missing
+        run: go test ./... -v -race -coverprofile=coverage.out
 
-  # ─────────────────────────────────────────
-  # Frontend (React / TypeScript)
-  # ─────────────────────────────────────────
-  test-frontend:
-    name: 🖥️ Frontend (React)
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Type check
-        run: npm run typecheck --if-present || npx tsc --noEmit
-
-      - name: Run tests
-        run: npm test -- --watchAll=false --passWithNoTests
+      - name: Show coverage
+        run: go tool cover -func=coverage.out | tail -n 1

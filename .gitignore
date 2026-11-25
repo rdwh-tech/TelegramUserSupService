@@ -25,6 +25,8 @@ backend/bin/
 backend/*.exe
 backend/*.test
 backend/coverage.out
+backend/AGENTS.md
+backend/IMPLEMENTATION_PLAN.md
 
 # ─── Node / React (frontend) ───
 node_modules/

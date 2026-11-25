@@ -1,0 +1,642 @@
+openapi: 3.0.3
+info:
+  title: Telegram bot internal API
+  version: 1.0.0
+  description: Target v1 contract. Business handlers are delivered by later API cards.
+servers:
+  - url: http://api:8080
+security:
+  - serviceBearer: []
+paths:
+  /internal/bot/v1/config:
+    get:
+      operationId: getBotConfig
+      parameters: [{ $ref: '#/components/parameters/XRequestID' }]
+      responses:
+        '200':
+          description: Company bot configuration
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BotConfig' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /internal/bot/v1/faq:
+    get:
+      operationId: listBotFAQ
+      parameters: [{ $ref: '#/components/parameters/XRequestID' }]
+      responses:
+        '200':
+          description: Active FAQ entries
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/FAQ' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /internal/bot/v1/clients/{telegram_user_id}:
+    parameters:
+      - { $ref: '#/components/parameters/TelegramUserID' }
+      - { $ref: '#/components/parameters/XRequestID' }
+    put:
+      operationId: upsertBotClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClientUpsert' }
+      responses:
+        '200':
+          description: Client state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ClientUpsertResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /internal/bot/v1/clients/{telegram_user_id}/context:
+    parameters:
+      - { $ref: '#/components/parameters/TelegramUserID' }
+      - { $ref: '#/components/parameters/XRequestID' }
+    get:
+      operationId: getBotClientContext
+      responses:
+        '200':
+          description: Recoverable client context; empty fields are returned for an unknown client
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ClientContext' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /internal/bot/v1/tickets:
+    post:
+      operationId: createBotTicket
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XRequestID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateTicket' }
+      responses:
+        '201':
+          description: Ticket created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CreateTicketResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403':
+          description: Access denied or inactive company
+          content: { application/json: { schema: { $ref: '#/components/schemas/CreateTicketForbiddenError' } } }
+        '409':
+          description: Client already has an active ticket
+          content: { application/json: { schema: { $ref: '#/components/schemas/ActiveTicketConflictError' } } }
+        '422':
+          description: Invalid ticket request
+          content: { application/json: { schema: { $ref: '#/components/schemas/ValidationError' } } }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500':
+          description: Ticket was not created
+          content: { application/json: { schema: { $ref: '#/components/schemas/TicketNotCreatedError' } } }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /internal/bot/v1/tickets/{ticket_id}/messages:
+    parameters:
+      - { $ref: '#/components/parameters/TicketID' }
+      - { $ref: '#/components/parameters/XRequestID' }
+    post:
+      operationId: createBotClientMessage
+      description: Idempotent by the natural key (ticket_id, telegram_message_id).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClientMessage' }
+      responses:
+        '200':
+          description: Duplicate accepted without creating another message
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DuplicateMessageResult' }
+              example:
+                message_id: 0b798ac5-f55e-4d16-b485-893da020a8d4
+                ticket_id: 7d1c4b1e-8a0b-4d77-9c0a-2f6e4a8b3c10
+                ticket_status: in_progress
+                duplicate: true
+                created_at: '2026-11-19T10:01:40Z'
+        '201':
+          description: Message created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CreatedMessageResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404':
+          description: Ticket not found
+          content: { application/json: { schema: { $ref: '#/components/schemas/TicketNotFoundError' } } }
+        '409':
+          description: Ticket is closed
+          content: { application/json: { schema: { $ref: '#/components/schemas/TicketClosedError' } } }
+        '422':
+          description: Invalid message or attachment
+          content: { application/json: { schema: { $ref: '#/components/schemas/MessageValidationError' } } }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /internal/bot/v1/tickets/{ticket_id}/rating:
+    parameters:
+      - { $ref: '#/components/parameters/TicketID' }
+      - { $ref: '#/components/parameters/XRequestID' }
+    post:
+      operationId: rateBotTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateRating' }
+      responses:
+        '201':
+          description: Rating stored
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RatingResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: Rating already exists or ticket is not closed
+          content: { application/json: { schema: { $ref: '#/components/schemas/RatingConflictError' } } }
+        '422':
+          description: Invalid rating
+          content: { application/json: { schema: { $ref: '#/components/schemas/ValidationError' } } }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /internal/bot/v1/tickets/{ticket_id}/reopen:
+    parameters:
+      - { $ref: '#/components/parameters/TicketID' }
+      - { $ref: '#/components/parameters/XRequestID' }
+    post:
+      operationId: reopenBotTicket
+      responses:
+        '200':
+          description: Ticket begins a new SLA cycle in the L1 queue
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReopenTicketResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: Ticket cannot be reopened
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReopenNotAllowedError' } } }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /internal/bot/v1/messages/{message_id}/delivery:
+    parameters:
+      - { $ref: '#/components/parameters/MessageID' }
+      - { $ref: '#/components/parameters/XRequestID' }
+    post:
+      operationId: reportOperatorMessageDelivery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DeliveryResult' }
+      responses:
+        '204': { description: Delivery state recorded idempotently }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /internal/bot/v1/broadcasts/{campaign_id}/recipients:
+    parameters:
+      - { $ref: '#/components/parameters/CampaignID' }
+      - { $ref: '#/components/parameters/XRequestID' }
+    get:
+      operationId: listBroadcastRecipients
+      parameters:
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 500, default: 500 }
+      responses:
+        '200':
+          description: Stable campaign recipient snapshot
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecipientPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404':
+          description: Campaign not found
+          content: { application/json: { schema: { $ref: '#/components/schemas/CampaignNotFoundError' } } }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /internal/bot/v1/broadcasts/{campaign_id}/progress:
+    parameters:
+      - { $ref: '#/components/parameters/CampaignID' }
+      - { $ref: '#/components/parameters/XRequestID' }
+    post:
+      operationId: updateBroadcastProgress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BroadcastProgress' }
+      responses:
+        '204': { description: Cumulative progress accepted idempotently }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404':
+          description: Campaign not found
+          content: { application/json: { schema: { $ref: '#/components/schemas/CampaignNotFoundError' } } }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /internal/bot/v1/attachments/{attachment_id}/file:
+    parameters:
+      - { $ref: '#/components/parameters/AttachmentID' }
+      - { $ref: '#/components/parameters/XRequestID' }
+    get:
+      operationId: downloadOperatorAttachment
+      responses:
+        '200':
+          description: Protected attachment stream
+          headers:
+            Content-Disposition:
+              schema: { type: string }
+          content:
+            '*/*':
+              schema: { type: string, format: binary }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404':
+          description: Attachment not found
+          content: { application/json: { schema: { $ref: '#/components/schemas/AttachmentNotFoundError' } } }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+components:
+  securitySchemes:
+    serviceBearer:
+      type: http
+      scheme: bearer
+  parameters:
+    XRequestID:
+      name: X-Request-Id
+      in: header
+      required: false
+      description: Canonical UUID used for end-to-end correlation; API generates one when omitted.
+      schema: { type: string, format: uuid }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, format: uuid }
+    TelegramUserID:
+      name: telegram_user_id
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+    TicketID: { name: ticket_id, in: path, required: true, schema: { type: string, format: uuid } }
+    MessageID: { name: message_id, in: path, required: true, schema: { type: string, format: uuid } }
+    CampaignID: { name: campaign_id, in: path, required: true, schema: { type: string, format: uuid } }
+    AttachmentID: { name: attachment_id, in: path, required: true, schema: { type: string, format: uuid } }
+  responses:
+    Error:
+      description: Contract error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    Unauthorized:
+      description: Missing or invalid service token
+      content: { application/json: { schema: { $ref: '#/components/schemas/InvalidServiceTokenError' } } }
+    Forbidden:
+      description: Object belongs to another company or access is denied
+      content: { application/json: { schema: { $ref: '#/components/schemas/AccessDeniedError' } } }
+    RateLimited:
+      description: Request rate limit exceeded
+      headers:
+        Retry-After:
+          required: true
+          schema: { type: integer, minimum: 1 }
+      content: { application/json: { schema: { $ref: '#/components/schemas/RateLimitedError' } } }
+    Unavailable:
+      description: Service temporarily unavailable
+      content: { application/json: { schema: { $ref: '#/components/schemas/ServiceUnavailableError' } } }
+  schemas:
+    UUID: { type: string, format: uuid }
+    Timestamp: { type: string, format: date-time }
+    TicketStatus: { type: string, enum: [new, in_progress, waiting_client, closed] }
+    EscalationLevel: { type: string, enum: [l1, l2] }
+    BotConfig:
+      type: object
+      required: [company_id, company_name, is_company_active, welcome_message, attachment_limits, updated_at]
+      properties:
+        company_id: { $ref: '#/components/schemas/UUID' }
+        company_name: { type: string }
+        is_company_active: { type: boolean }
+        welcome_message: { type: string }
+        attachment_limits:
+          type: object
+          required: [max_file_size_bytes, photo_mime_types, document_extensions]
+          properties:
+            max_file_size_bytes: { type: integer, minimum: 1 }
+            photo_mime_types: { type: array, items: { type: string } }
+            document_extensions: { type: array, items: { type: string } }
+        updated_at: { $ref: '#/components/schemas/Timestamp' }
+      example:
+        company_id: 0b1c9a3e-5d0e-4c53-9d6e-0a7f2f6c1b11
+        company_name: ООО Ромашка
+        is_company_active: true
+        welcome_message: Здравствуйте! Чем мы можем помочь?
+        attachment_limits: { max_file_size_bytes: 20971520, photo_mime_types: [image/jpeg, image/png, image/webp], document_extensions: [.pdf, .docx, .txt, .zip] }
+        updated_at: '2026-11-18T09:00:00Z'
+    FAQ:
+      type: object
+      required: [id, question, answer, sort_order]
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        question: { type: string }
+        answer: { type: string }
+        sort_order: { type: integer }
+      example: { id: 5e2f3d4c-1111-4111-8111-111111111111, question: 'Как создать обращение?', answer: 'Нажмите кнопку Написать оператору', sort_order: 1 }
+    ClientUpsert:
+      type: object
+      required: [telegram_chat_id, full_name]
+      properties:
+        telegram_chat_id: { type: integer, format: int64 }
+        username: { type: string, nullable: true }
+        full_name: { type: string }
+      example: { telegram_chat_id: 123456789, username: ivan_petrov, full_name: Иван Петров }
+    ClientUpsertResult:
+      type: object
+      required: [client_id, telegram_user_id, created]
+      properties:
+        client_id: { $ref: '#/components/schemas/UUID' }
+        telegram_user_id: { type: integer, format: int64 }
+        created: { type: boolean }
+      example: { client_id: c2d8cc1c-7c3d-4ea9-a753-4ad22dff9c01, telegram_user_id: 123456789, created: false }
+    TicketContext:
+      type: object
+      required: [ticket_id, ticket_number, status, escalation_level, created_at]
+      properties:
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        ticket_number: { type: integer }
+        status: { $ref: '#/components/schemas/TicketStatus' }
+        escalation_level: { $ref: '#/components/schemas/EscalationLevel' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+    PendingRating:
+      type: object
+      required: [ticket_id, ticket_number, closed_at]
+      properties:
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        ticket_number: { type: integer }
+        closed_at: { $ref: '#/components/schemas/Timestamp' }
+    ClientContext:
+      type: object
+      required: [client_id, active_ticket, pending_rating]
+      properties:
+        client_id: { type: string, format: uuid, nullable: true }
+        active_ticket: { $ref: '#/components/schemas/NullableTicketContext' }
+        pending_rating: { $ref: '#/components/schemas/NullablePendingRating' }
+      example:
+        client_id: c2d8cc1c-7c3d-4ea9-a753-4ad22dff9c01
+        active_ticket: { ticket_id: 7d1c4b1e-8a0b-4d77-9c0a-2f6e4a8b3c10, ticket_number: 1042, status: in_progress, escalation_level: l1, created_at: '2026-11-19T09:58:12Z' }
+        pending_rating: null
+    NullableTicketContext:
+      oneOf:
+        - { $ref: '#/components/schemas/TicketContext' }
+        - { type: object, nullable: true, enum: [null] }
+    NullablePendingRating:
+      oneOf:
+        - { $ref: '#/components/schemas/PendingRating' }
+        - { type: object, nullable: true, enum: [null] }
+    CreateTicket:
+      allOf:
+        - { $ref: '#/components/schemas/ClientUpsert' }
+        - type: object
+          required: [telegram_user_id]
+          properties:
+            telegram_user_id: { type: integer, format: int64 }
+      example: { telegram_user_id: 123456789, telegram_chat_id: 123456789, username: ivan_petrov, full_name: Иван Петров }
+    ReopenTicketResult:
+      type: object
+      required: [ticket_id, ticket_number, status, escalation_level]
+      properties:
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        ticket_number: { type: integer }
+        status: { $ref: '#/components/schemas/TicketStatus' }
+        escalation_level: { $ref: '#/components/schemas/EscalationLevel' }
+      example: { ticket_id: 7d1c4b1e-8a0b-4d77-9c0a-2f6e4a8b3c10, ticket_number: 1042, status: new, escalation_level: l1 }
+    CreateTicketResult:
+      type: object
+      required: [ticket_id, ticket_number, status, escalation_level, created_at]
+      properties:
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        ticket_number: { type: integer }
+        status: { $ref: '#/components/schemas/TicketStatus' }
+        escalation_level: { $ref: '#/components/schemas/EscalationLevel' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+      example: { ticket_id: 7d1c4b1e-8a0b-4d77-9c0a-2f6e4a8b3c10, ticket_number: 1042, status: new, escalation_level: l1, created_at: '2026-11-19T09:58:12Z' }
+    ClientAttachment:
+      type: object
+      required: [file_type, telegram_file_id, file_name, mime_type, file_size_bytes]
+      properties:
+        file_type: { type: string, enum: [photo, document] }
+        telegram_file_id: { type: string, minLength: 1 }
+        file_name: { type: string, minLength: 1 }
+        mime_type: { type: string, minLength: 1 }
+        file_size_bytes: { type: integer, minimum: 1, maximum: 20971520 }
+    ClientMessage:
+      oneOf:
+        - { $ref: '#/components/schemas/TextMessage' }
+        - { $ref: '#/components/schemas/PhotoMessage' }
+        - { $ref: '#/components/schemas/DocumentMessage' }
+    TextMessage:
+      type: object
+      required: [type, content, telegram_message_id, attachments]
+      properties:
+        type: { type: string, enum: [text] }
+        content: { type: string, minLength: 1 }
+        telegram_message_id: { type: integer, format: int64 }
+        attachments: { type: array, maxItems: 0, items: { $ref: '#/components/schemas/ClientAttachment' } }
+      example: { type: text, content: Не могу войти в личный кабинет, telegram_message_id: 5521, attachments: [] }
+    PhotoMessage:
+      type: object
+      required: [type, content, telegram_message_id, attachments]
+      properties:
+        type: { type: string, enum: [photo] }
+        content: { type: string, nullable: true }
+        telegram_message_id: { type: integer, format: int64 }
+        attachments:
+          type: array
+          minItems: 1
+          maxItems: 1
+          items:
+            allOf:
+              - { $ref: '#/components/schemas/ClientAttachment' }
+              - { type: object, properties: { file_type: { type: string, enum: [photo] } } }
+      example: { type: photo, content: null, telegram_message_id: 5522, attachments: [{ file_type: photo, telegram_file_id: AgAC-photo, file_name: photo_5522.jpg, mime_type: image/jpeg, file_size_bytes: 482133 }] }
+    DocumentMessage:
+      type: object
+      required: [type, content, telegram_message_id, attachments]
+      properties:
+        type: { type: string, enum: [document] }
+        content: { type: string, nullable: true }
+        telegram_message_id: { type: integer, format: int64 }
+        attachments:
+          type: array
+          minItems: 1
+          maxItems: 1
+          items:
+            allOf:
+              - { $ref: '#/components/schemas/ClientAttachment' }
+              - { type: object, properties: { file_type: { type: string, enum: [document] } } }
+      example: { type: document, content: Скриншот ошибки во вложении, telegram_message_id: 5522, attachments: [{ file_type: document, telegram_file_id: BQAC-document, file_name: error.pdf, mime_type: application/pdf, file_size_bytes: 482133 }] }
+    MessageResult:
+      type: object
+      required: [message_id, ticket_id, ticket_status, duplicate, created_at]
+      properties:
+        message_id: { $ref: '#/components/schemas/UUID' }
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        ticket_status: { $ref: '#/components/schemas/TicketStatus' }
+        duplicate: { type: boolean }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+      example: { message_id: 0b798ac5-f55e-4d16-b485-893da020a8d4, ticket_id: 7d1c4b1e-8a0b-4d77-9c0a-2f6e4a8b3c10, ticket_status: in_progress, duplicate: false, created_at: '2026-11-19T10:01:40Z' }
+    DuplicateMessageResult:
+      allOf:
+        - { $ref: '#/components/schemas/MessageResult' }
+        - { type: object, properties: { duplicate: { type: boolean, enum: [true] } } }
+      example: { message_id: 0b798ac5-f55e-4d16-b485-893da020a8d4, ticket_id: 7d1c4b1e-8a0b-4d77-9c0a-2f6e4a8b3c10, ticket_status: in_progress, duplicate: true, created_at: '2026-11-19T10:01:40Z' }
+    CreatedMessageResult:
+      allOf:
+        - { $ref: '#/components/schemas/MessageResult' }
+        - { type: object, properties: { duplicate: { type: boolean, enum: [false] } } }
+      example: { message_id: 0b798ac5-f55e-4d16-b485-893da020a8d4, ticket_id: 7d1c4b1e-8a0b-4d77-9c0a-2f6e4a8b3c10, ticket_status: in_progress, duplicate: false, created_at: '2026-11-19T10:01:40Z' }
+    CreateRating:
+      type: object
+      required: [score]
+      properties:
+        score: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string, nullable: true }
+      example: { score: 5, comment: null }
+    RatingResult:
+      type: object
+      required: [ticket_id, score, rated_at]
+      properties:
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        score: { type: integer, minimum: 1, maximum: 5 }
+        rated_at: { $ref: '#/components/schemas/Timestamp' }
+      example: { ticket_id: 7d1c4b1e-8a0b-4d77-9c0a-2f6e4a8b3c10, score: 5, rated_at: '2026-11-19T11:20:00Z' }
+    DeliveryResult:
+      type: object
+      required: [delivered]
+      properties:
+        delivered: { type: boolean }
+        telegram_message_id: { type: integer, format: int64, nullable: true }
+        error_code: { type: string, enum: [BOT_BLOCKED_BY_USER, CHAT_NOT_FOUND, FILE_DOWNLOAD_FAILED, TELEGRAM_ERROR], nullable: true }
+        error: { type: string, nullable: true }
+      example: { delivered: true, telegram_message_id: 778, error_code: null, error: null }
+    RecipientPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [client_id, telegram_chat_id]
+            properties:
+              client_id: { $ref: '#/components/schemas/UUID' }
+              telegram_chat_id: { type: integer, format: int64 }
+        next_cursor: { type: string, nullable: true }
+      example: { items: [{ client_id: c2d8cc1c-7c3d-4ea9-a753-4ad22dff9c01, telegram_chat_id: 123456789 }], next_cursor: eyJvIjo1MDB9 }
+    BroadcastProgress:
+      type: object
+      required: [sent, failed, finished]
+      properties:
+        sent: { type: integer, minimum: 0 }
+        failed: { type: integer, minimum: 0 }
+        finished: { type: boolean }
+      example: { sent: 480, failed: 20, finished: false }
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, request_id]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details: { type: object, nullable: true, additionalProperties: true }
+            request_id: { type: string, format: uuid }
+    InvalidServiceTokenError:
+      allOf: [{ $ref: '#/components/schemas/ErrorEnvelope' }, { $ref: '#/components/schemas/InvalidServiceTokenCode' }]
+    InvalidServiceTokenCode: { type: object, properties: { error: { type: object, required: [code], properties: { code: { type: string, enum: [INVALID_SERVICE_TOKEN] } } } } }
+    AccessDeniedError:
+      allOf: [{ $ref: '#/components/schemas/ErrorEnvelope' }, { $ref: '#/components/schemas/AccessDeniedCode' }]
+    AccessDeniedCode: { type: object, properties: { error: { type: object, required: [code], properties: { code: { type: string, enum: [ACCESS_DENIED, COMPANY_INACTIVE] } } } } }
+    RateLimitedError:
+      allOf: [{ $ref: '#/components/schemas/ErrorEnvelope' }, { $ref: '#/components/schemas/RateLimitedCode' }]
+    RateLimitedCode: { type: object, properties: { error: { type: object, required: [code], properties: { code: { type: string, enum: [RATE_LIMITED] } } } } }
+    ServiceUnavailableError:
+      allOf: [{ $ref: '#/components/schemas/ErrorEnvelope' }, { $ref: '#/components/schemas/ServiceUnavailableCode' }]
+    ServiceUnavailableCode: { type: object, properties: { error: { type: object, required: [code], properties: { code: { type: string, enum: [SERVICE_UNAVAILABLE] } } } } }
+    CreateTicketForbiddenError:
+      allOf: [{ $ref: '#/components/schemas/ErrorEnvelope' }, { $ref: '#/components/schemas/CreateTicketForbiddenCode' }]
+    CreateTicketForbiddenCode: { type: object, properties: { error: { type: object, required: [code], properties: { code: { type: string, enum: [ACCESS_DENIED, COMPANY_INACTIVE] } } } } }
+    ActiveTicketConflictError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, details, request_id]
+          properties:
+            code: { type: string, enum: [CLIENT_ACTIVE_TICKET_EXISTS] }
+            message: { type: string }
+            details:
+              type: object
+              required: [ticket_id, ticket_number, status]
+              properties:
+                ticket_id: { $ref: '#/components/schemas/UUID' }
+                ticket_number: { type: integer }
+                status: { $ref: '#/components/schemas/TicketStatus' }
+            request_id: { type: string, format: uuid }
+    ValidationError:
+      allOf: [{ $ref: '#/components/schemas/ErrorEnvelope' }, { $ref: '#/components/schemas/ValidationCode' }]
+    ValidationCode: { type: object, properties: { error: { type: object, required: [code], properties: { code: { type: string, enum: [VALIDATION_ERROR] } } } } }
+    TicketNotCreatedError:
+      allOf: [{ $ref: '#/components/schemas/ErrorEnvelope' }, { $ref: '#/components/schemas/TicketNotCreatedCode' }]
+    TicketNotCreatedCode: { type: object, properties: { error: { type: object, required: [code], properties: { code: { type: string, enum: [TICKET_NOT_CREATED] } } } } }
+    TicketNotFoundError:
+      allOf: [{ $ref: '#/components/schemas/ErrorEnvelope' }, { $ref: '#/components/schemas/TicketNotFoundCode' }]
+    TicketNotFoundCode: { type: object, properties: { error: { type: object, required: [code], properties: { code: { type: string, enum: [TICKET_NOT_FOUND] } } } } }
+    TicketClosedError:
+      allOf: [{ $ref: '#/components/schemas/ErrorEnvelope' }, { $ref: '#/components/schemas/TicketClosedCode' }]
+    TicketClosedCode: { type: object, properties: { error: { type: object, required: [code], properties: { code: { type: string, enum: [TICKET_CLOSED] } } } } }
+    MessageValidationError:
+      allOf: [{ $ref: '#/components/schemas/ErrorEnvelope' }, { $ref: '#/components/schemas/MessageValidationCode' }]
+    MessageValidationCode: { type: object, properties: { error: { type: object, required: [code], properties: { code: { type: string, enum: [ATTACHMENT_TOO_LARGE, ATTACHMENT_TYPE_NOT_ALLOWED, VALIDATION_ERROR] } } } } }
+    RatingConflictError:
+      allOf: [{ $ref: '#/components/schemas/ErrorEnvelope' }, { $ref: '#/components/schemas/RatingConflictCode' }]
+    RatingConflictCode: { type: object, properties: { error: { type: object, required: [code], properties: { code: { type: string, enum: [RATING_ALREADY_EXISTS, TICKET_NOT_CLOSED] } } } } }
+    ReopenNotAllowedError:
+      allOf: [{ $ref: '#/components/schemas/ErrorEnvelope' }, { $ref: '#/components/schemas/ReopenNotAllowedCode' }]
+    ReopenNotAllowedCode: { type: object, properties: { error: { type: object, required: [code], properties: { code: { type: string, enum: [REOPEN_NOT_ALLOWED] } } } } }
+    AttachmentNotFoundError:
+      allOf: [{ $ref: '#/components/schemas/ErrorEnvelope' }, { $ref: '#/components/schemas/AttachmentNotFoundCode' }]
+    AttachmentNotFoundCode: { type: object, properties: { error: { type: object, required: [code], properties: { code: { type: string, enum: [ATTACHMENT_NOT_FOUND] } } } } }
+    CampaignNotFoundError:
+      allOf: [{ $ref: '#/components/schemas/ErrorEnvelope' }, { $ref: '#/components/schemas/CampaignNotFoundCode' }]
+    CampaignNotFoundCode: { type: object, properties: { error: { type: object, required: [code], properties: { code: { type: string, enum: [CAMPAIGN_NOT_FOUND] } } } } }

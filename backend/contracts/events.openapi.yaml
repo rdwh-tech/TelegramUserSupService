@@ -1,0 +1,355 @@
+openapi: 3.0.3
+info:
+  title: RabbitMQ support.events schemas
+  version: 1.0.0
+  description: Payload schemas are separated by recipient even when event_type is shared.
+paths: {}
+components:
+  schemas:
+    UUID: { type: string, format: uuid }
+    Timestamp: { type: string, format: date-time }
+    Status: { type: string, enum: [new, in_progress, waiting_client, closed] }
+    Level: { type: string, enum: [l1, l2] }
+    EventEnvelope:
+      type: object
+      required: [event_id, event_type, schema_version, occurred_at, company_id, correlation_id, payload]
+      properties:
+        event_id: { $ref: '#/components/schemas/UUID' }
+        event_type: { type: string }
+        schema_version: { type: integer, enum: [1] }
+        occurred_at: { $ref: '#/components/schemas/Timestamp' }
+        company_id: { $ref: '#/components/schemas/UUID' }
+        correlation_id: { $ref: '#/components/schemas/UUID' }
+        payload: { type: object }
+    BotTicketTaken:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [ticket.taken] }
+            payload: { $ref: '#/components/schemas/BotTicketTakenPayload' }
+    BotTicketTakenPayload:
+      type: object
+      required: [ticket_id, ticket_number, telegram_chat_id, escalation_level, taken_at]
+      properties:
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        ticket_number: { type: integer }
+        telegram_chat_id: { type: integer, format: int64 }
+        escalation_level: { $ref: '#/components/schemas/Level' }
+        taken_at: { $ref: '#/components/schemas/Timestamp' }
+    BotMessageOperator:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [message.operator] }
+            payload: { $ref: '#/components/schemas/BotMessageOperatorPayload' }
+    BotMessageOperatorPayload:
+      type: object
+      required: [message_id, ticket_id, ticket_number, telegram_chat_id, content, attachments, created_at]
+      properties:
+        message_id: { $ref: '#/components/schemas/UUID' }
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        ticket_number: { type: integer }
+        telegram_chat_id: { type: integer, format: int64 }
+        content: { type: string, nullable: true }
+        attachments: { type: array, items: { $ref: '#/components/schemas/BotAttachment' } }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+    BotAttachment:
+      type: object
+      required: [attachment_id, file_type, file_name, mime_type, file_size_bytes, download_path]
+      properties:
+        attachment_id: { $ref: '#/components/schemas/UUID' }
+        file_type: { type: string, enum: [photo, document] }
+        file_name: { type: string }
+        mime_type: { type: string }
+        file_size_bytes: { type: integer, minimum: 1 }
+        download_path: { type: string, pattern: '^/internal/bot/v1/attachments/[0-9a-f-]+/file$' }
+    BotTicketEscalated:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [ticket.escalated] }
+            payload: { $ref: '#/components/schemas/BotTicketEscalatedPayload' }
+    BotTicketEscalatedPayload:
+      type: object
+      not: { required: [reason] }
+      required: [ticket_id, ticket_number, telegram_chat_id, escalated_at]
+      properties:
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        ticket_number: { type: integer }
+        telegram_chat_id: { type: integer, format: int64 }
+        escalated_at: { $ref: '#/components/schemas/Timestamp' }
+    BotTicketClosed:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [ticket.closed] }
+            payload: { $ref: '#/components/schemas/BotTicketClosedPayload' }
+    BotTicketClosedPayload:
+      type: object
+      required: [ticket_id, ticket_number, telegram_chat_id, closed_at, request_rating]
+      properties:
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        ticket_number: { type: integer }
+        telegram_chat_id: { type: integer, format: int64 }
+        closed_at: { $ref: '#/components/schemas/Timestamp' }
+        request_rating: { type: boolean }
+    BotTicketStatusChanged:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [ticket.status_changed] }
+            payload: { $ref: '#/components/schemas/BotTicketStatusChangedPayload' }
+    BotTicketStatusChangedPayload:
+      type: object
+      required: [ticket_id, ticket_number, telegram_chat_id, old_status, new_status, trigger_type]
+      properties:
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        ticket_number: { type: integer }
+        telegram_chat_id: { type: integer, format: int64 }
+        old_status: { $ref: '#/components/schemas/Status' }
+        new_status: { $ref: '#/components/schemas/Status' }
+        trigger_type: { type: string, enum: [operator_wait_client, client_message, client_reopen, operator_reopen, system_reassign] }
+    BotBroadcastRequested:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [broadcast.requested] }
+            payload: { $ref: '#/components/schemas/BotBroadcastRequestedPayload' }
+    BotBroadcastRequestedPayload:
+      type: object
+      required: [campaign_id, message_text, total_recipients]
+      properties:
+        campaign_id: { $ref: '#/components/schemas/UUID' }
+        message_text: { type: string }
+        total_recipients: { type: integer, minimum: 0 }
+    BotCompanyConfigUpdated:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [company.config_updated] }
+            payload: { $ref: '#/components/schemas/BotCompanyConfigUpdatedPayload' }
+    BotCompanyConfigUpdatedPayload:
+      type: object
+      required: [changed]
+      properties:
+        changed: { type: array, items: { type: string, enum: [welcome_message, faq] }, minItems: 1 }
+    BotCompanyBotReplaced:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [company.bot_replaced] }
+            payload: { $ref: '#/components/schemas/BotCompanyBotReplacedPayload' }
+    BotCompanyBotReplacedPayload:
+      type: object
+      required: [replaced_at]
+      properties:
+        replaced_at: { $ref: '#/components/schemas/Timestamp' }
+    AnalyticsTicketCreated:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [ticket.created] }
+            payload: { $ref: '#/components/schemas/AnalyticsTicketCreatedPayload' }
+    AnalyticsTicketCreatedPayload:
+      type: object
+      required: [ticket_id, ticket_number, client_id, status, escalation_level, created_at, sla_policy, schedule]
+      properties:
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        ticket_number: { type: integer }
+        client_id: { $ref: '#/components/schemas/UUID' }
+        status: { $ref: '#/components/schemas/Status' }
+        escalation_level: { $ref: '#/components/schemas/Level' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+        sla_policy: { $ref: '#/components/schemas/SLAPolicySnapshot' }
+        schedule: { $ref: '#/components/schemas/ScheduleSnapshot' }
+    SLALimits:
+      type: object
+      required: [frt_limit_minutes, ttr_limit_minutes, art_limit_minutes]
+      properties:
+        frt_limit_minutes: { type: integer, minimum: 1 }
+        ttr_limit_minutes: { type: integer, minimum: 1 }
+        art_limit_minutes: { type: integer, minimum: 1 }
+    SLAPolicySnapshot:
+      type: object
+      required: [policy_id, version, l1, l2]
+      properties:
+        policy_id: { $ref: '#/components/schemas/UUID' }
+        version: { type: integer, minimum: 1 }
+        l1: { $ref: '#/components/schemas/SLALimits' }
+        l2: { $ref: '#/components/schemas/SLALimits' }
+    ScheduleDay:
+      type: object
+      required: [day_of_week, is_working_day, start_time, end_time]
+      properties:
+        day_of_week: { type: integer, minimum: 1, maximum: 7 }
+        is_working_day: { type: boolean }
+        start_time: { type: string, nullable: true, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' }
+        end_time: { type: string, nullable: true, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' }
+    ScheduleSnapshot:
+      type: object
+      required: [timezone, days]
+      properties:
+        timezone: { type: string }
+        days: { type: array, minItems: 7, maxItems: 7, items: { $ref: '#/components/schemas/ScheduleDay' } }
+    AnalyticsTicketStatusChanged:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [ticket.status_changed] }
+            payload: { $ref: '#/components/schemas/AnalyticsTicketStatusChangedPayload' }
+    AnalyticsTicketStatusChangedPayload:
+      type: object
+      required: [ticket_id, old_status, new_status, trigger_type, changed_by_user_id, escalation_level, assigned_operator_id, changed_at]
+      properties:
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        old_status: { $ref: '#/components/schemas/Status' }
+        new_status: { $ref: '#/components/schemas/Status' }
+        trigger_type: { type: string }
+        changed_by_user_id: { type: string, format: uuid, nullable: true }
+        escalation_level: { $ref: '#/components/schemas/Level' }
+        assigned_operator_id: { type: string, format: uuid, nullable: true }
+        changed_at: { $ref: '#/components/schemas/Timestamp' }
+    AnalyticsTicketAssigned:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [ticket.assigned] }
+            payload: { $ref: '#/components/schemas/AnalyticsTicketAssignedPayload' }
+    AnalyticsTicketAssignedPayload:
+      type: object
+      required: [ticket_id, operator_id, escalation_level, assigned_at]
+      properties:
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        operator_id: { $ref: '#/components/schemas/UUID' }
+        escalation_level: { $ref: '#/components/schemas/Level' }
+        assigned_at: { $ref: '#/components/schemas/Timestamp' }
+    AnalyticsTicketEscalated:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [ticket.escalated] }
+            payload: { $ref: '#/components/schemas/AnalyticsTicketEscalatedPayload' }
+    AnalyticsTicketEscalatedPayload:
+      type: object
+      required: [ticket_id, escalated_by_user_id, from_level, to_level, reason, escalated_at]
+      properties:
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        escalated_by_user_id: { $ref: '#/components/schemas/UUID' }
+        from_level: { $ref: '#/components/schemas/Level' }
+        to_level: { $ref: '#/components/schemas/Level' }
+        reason: { type: string, nullable: true }
+        escalated_at: { $ref: '#/components/schemas/Timestamp' }
+    AnalyticsMessageCreated:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [message.created] }
+            payload: { $ref: '#/components/schemas/AnalyticsMessageCreatedPayload' }
+    AnalyticsMessageCreatedPayload:
+      type: object
+      not: { required: [content] }
+      required: [message_id, ticket_id, sender_type, sender_user_id, has_text, has_attachments, is_first_operator_response, escalation_level, created_at]
+      properties:
+        message_id: { $ref: '#/components/schemas/UUID' }
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        sender_type: { type: string, enum: [client, operator, system] }
+        sender_user_id: { type: string, format: uuid, nullable: true }
+        has_text: { type: boolean }
+        has_attachments: { type: boolean }
+        is_first_operator_response: { type: boolean }
+        escalation_level: { $ref: '#/components/schemas/Level' }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+    AnalyticsTicketRated:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [ticket.rated] }
+            payload: { $ref: '#/components/schemas/AnalyticsTicketRatedPayload' }
+    AnalyticsTicketRatedPayload:
+      type: object
+      required: [ticket_id, score, handled_by_operator_id, rated_at]
+      properties:
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        score: { type: integer, minimum: 1, maximum: 5 }
+        handled_by_operator_id: { type: string, format: uuid, nullable: true }
+        rated_at: { $ref: '#/components/schemas/Timestamp' }
+    AnalyticsCompanySLAPolicyUpdated:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [company.sla_policy_updated] }
+            payload: { $ref: '#/components/schemas/AnalyticsCompanySLAPolicyUpdatedPayload' }
+    AnalyticsCompanySLAPolicyUpdatedPayload:
+      allOf:
+        - { $ref: '#/components/schemas/SLAPolicySnapshot' }
+        - type: object
+          required: [effective_from]
+          properties:
+            effective_from: { $ref: '#/components/schemas/Timestamp' }
+    AnalyticsCompanyScheduleUpdated:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [company.schedule_updated] }
+            payload: { $ref: '#/components/schemas/AnalyticsCompanyScheduleUpdatedPayload' }
+    AnalyticsCompanyScheduleUpdatedPayload:
+      allOf:
+        - { $ref: '#/components/schemas/ScheduleSnapshot' }
+        - type: object
+          required: [effective_from]
+          properties:
+            effective_from: { $ref: '#/components/schemas/Timestamp' }
+    APISLAMetricsUpdated:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [sla.metrics_updated] }
+            payload: { $ref: '#/components/schemas/APISLAMetricsUpdatedPayload' }
+    APISLAMetricsUpdatedPayload:
+      type: object
+      required: [ticket_id, frt_deadline, ttr_deadline, actual_frt_minutes, actual_ttr_minutes, is_frt_breached, is_ttr_breached, is_sla_violated, sla_status, calculated_at]
+      properties:
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        frt_deadline: { type: string, format: date-time, nullable: true }
+        ttr_deadline: { type: string, format: date-time, nullable: true }
+        actual_frt_minutes: { type: number, nullable: true }
+        actual_ttr_minutes: { type: number, nullable: true }
+        is_frt_breached: { type: boolean }
+        is_ttr_breached: { type: boolean }
+        is_sla_violated: { type: boolean }
+        sla_status: { type: string, enum: [ok, warning, breached, paused] }
+        calculated_at: { $ref: '#/components/schemas/Timestamp' }
+    APISLABreached:
+      allOf:
+        - { $ref: '#/components/schemas/EventEnvelope' }
+        - type: object
+          properties:
+            event_type: { type: string, enum: [sla.breached] }
+            payload: { $ref: '#/components/schemas/APISLABreachedPayload' }
+    APISLABreachedPayload:
+      type: object
+      required: [ticket_id, metric, deadline_at, breached_at, assigned_operator_id, escalation_level]
+      properties:
+        ticket_id: { $ref: '#/components/schemas/UUID' }
+        metric: { type: string, enum: [frt, ttr] }
+        deadline_at: { $ref: '#/components/schemas/Timestamp' }
+        breached_at: { $ref: '#/components/schemas/Timestamp' }
+        assigned_operator_id: { type: string, format: uuid, nullable: true }
+        escalation_level: { $ref: '#/components/schemas/Level' }

@@ -1,60 +1,393 @@
 // app/routes/tickets.$id.tsx
-import React from "react";
-import { useParams, Link } from "react-router";
-import { Box, Typography, Card, CardContent, Stack, Chip, Button } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router";
+import {
+  Box,
+  Typography,
+  Paper,
+  Stack,
+  Chip,
+  IconButton,
+  CircularProgress,
+  Alert,
+  Tooltip,
+} from "@mui/material";
 import { RoleGuard } from "~/components/auth/RoleGuard";
+import { useAuth } from "~/context/AuthContext";
+import { ticketsApi } from "~/api/tickets";
 import { M3Icon } from "~/components/ui/M3Icon";
+import { M3Button } from "~/components/ui/M3Button";
+import { TicketSidebar } from "~/components/tickets/TicketSidebar";
+import { MessageList } from "~/components/chat/MessageList";
+import { MessageComposer } from "~/components/chat/MessageComposer";
+import { ImageLightbox } from "~/components/chat/ImageLightbox";
+import { EscalateTicketModal } from "~/components/tickets/EscalateTicketModal";
+import { CloseTicketModal } from "~/components/tickets/CloseTicketModal";
+import type { ExtendedMessage } from "~/components/chat/MessageItem";
+import type { Ticket } from "~/types/ticket";
+import type { TicketMessage } from "~/types/message";
 
 export function meta() {
   return [
-    { title: "Просмотр тикета — TUSS" },
-    { name: "description", content: "Детали тикета и история сообщений" },
+    { title: "Рабочее место тикета — TUSS" },
+    { name: "description", content: "Двухпанельный интерфейс активного тикета службы поддержки" },
   ];
 }
 
 export default function TicketDetailsRoute() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const [ticket, setTicket] = useState<Ticket | null>(null);
+  const [messages, setMessages] = useState<ExtendedMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false);
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [lightboxState, setLightboxState] = useState<{
+    open: boolean;
+    url: string | null;
+    fileName?: string;
+  }>({ open: false, url: null });
+
+  // Обработка кнопки назад в зависимости от роли
+  const backQueuePath =
+    user?.role === "operator_l2"
+      ? "/queue/escalated"
+      : user?.role === "operator_l1"
+      ? "/queue/new"
+      : "/tickets/archive";
+
+  const isReadOnly = Boolean(
+    user?.role === "admin" ||
+      ticket?.status === "closed" ||
+      (ticket && ticket.assignedOperatorId !== user?.id)
+  );
+
+  useEffect(() => {
+    if (!id) return;
+    let isMounted = true;
+    setIsLoading(true);
+
+    Promise.allSettled([ticketsApi.getTicketById(id), ticketsApi.getMessages(id)])
+      .then(([ticketRes, messagesRes]) => {
+        if (!isMounted) return;
+
+        if (ticketRes.status === "fulfilled") {
+          setTicket(ticketRes.value);
+        } else {
+          setErrorMessage("Обращение не найдено или доступ ограничен.");
+        }
+
+        if (messagesRes.status === "fulfilled") {
+          setMessages(messagesRes.value || []);
+        }
+      })
+      .catch((err) => {
+        console.error("Ошибка загрузки карточки тикета:", err);
+        if (isMounted) {
+          setErrorMessage("Не удалось загрузить данные обращения.");
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  const handleSendMessage = async (text: string, files: File[]) => {
+    if (!id) return;
+    setIsSending(true);
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg: ExtendedMessage = {
+      id: tempId,
+      ticketId: id,
+      senderType: "operator",
+      senderName: user?.fullName || "Служба поддержки",
+      text,
+      isDelivered: false,
+      deliveryStatus: "sending",
+      createdAt: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, optimisticMsg]);
+
+    try {
+      const savedMessage = await ticketsApi.sendMessage({
+        ticketId: id,
+        text,
+        attachments: files.length > 0 ? files : undefined,
+      });
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === tempId ? { ...savedMessage, deliveryStatus: "delivered" } : m
+        )
+      );
+    } catch (err: any) {
+      console.error("Ошибка при отправке сообщения в Telegram:", err);
+      setMessages((prev) =>
+        prev.map((m) => (m.id === tempId ? { ...m, deliveryStatus: "failed" } : m))
+      );
+      throw err;
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleRetryMessage = async (failedMessageId: string) => {
+    if (!id) return;
+    const targetMsg = messages.find((m) => m.id === failedMessageId);
+    if (!targetMsg) return;
+
+    setMessages((prev) =>
+      prev.map((m) => (m.id === failedMessageId ? { ...m, deliveryStatus: "sending" } : m))
+    );
+
+    try {
+      const saved = await ticketsApi.sendMessage({
+        ticketId: id,
+        text: targetMsg.text,
+      });
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === failedMessageId ? { ...saved, deliveryStatus: "delivered" } : m
+        )
+      );
+    } catch (err) {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === failedMessageId ? { ...m, deliveryStatus: "failed" } : m))
+      );
+    }
+  };
+
+  const handleImageClick = (imageUrl: string, fileName?: string) => {
+    setLightboxState({ open: true, url: imageUrl, fileName });
+  };
+
+  const handleConfirmEscalate = async (reason: string) => {
+    if (!id) return;
+    setIsActionLoading(true);
+    try {
+      await ticketsApi.escalateTicket(id, { reason });
+      navigate(backQueuePath, { replace: true });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleConfirmClose = async (resolutionNotes: string) => {
+    if (!id) return;
+    setIsActionLoading(true);
+    try {
+      await ticketsApi.closeTicket(id, { resolutionNotes });
+      navigate(backQueuePath, { replace: true });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
 
   return (
     <RoleGuard allowedRoles={["operator_l1", "operator_l2", "admin"]}>
-      <Box sx={{ maxWidth: 1000, mx: "auto" }}>
-        <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 2 }}>
-          <Button
-            component={Link}
-            to="/tickets/archive"
-            startIcon={<M3Icon name="arrow_back" size={18} />}
-            size="small"
-            color="inherit"
+      <Box
+        data-testid="ticket-workspace"
+        sx={{
+          maxWidth: 1440,
+          mx: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+        }}
+      >
+        {/* Верхняя навигационная панель тикета */}
+        <Stack
+          direction="row"
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 1.5,
+          }}
+        >
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+            <Tooltip title="Вернуться к очереди" arrow>
+              <IconButton
+                component={Link}
+                to={backQueuePath}
+                size="small"
+                sx={{
+                  bgcolor: "background.paper",
+                  border: "1px solid",
+                  borderColor: "divider",
+                }}
+              >
+                <M3Icon name="arrow_back" size={20} />
+              </IconButton>
+            </Tooltip>
+
+            {ticket && (
+              <div>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: "text.primary", lineHeight: 1.2 }}>
+                  Обращение #{ticket.ticketNumber}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Клиент: <strong>{ticket.client.fullName}</strong>
+                  {ticket.client.username && ` (@${ticket.client.username})`}
+                </Typography>
+              </div>
+            )}
+          </Stack>
+
+          {isReadOnly && (
+            <Chip
+              label="Режим только для чтения"
+              size="small"
+              variant="outlined"
+              color="info"
+              icon={<M3Icon name="visibility" size={16} />}
+            />
+          )}
+        </Stack>
+
+        {errorMessage && (
+          <Alert severity="error" sx={{ borderRadius: 1.5 }}>
+            {errorMessage}
+          </Alert>
+        )}
+
+        {isLoading ? (
+          <Paper
+            elevation={0}
+            data-testid="ticket-loading-state"
+            sx={{
+              p: 8,
+              textAlign: "center",
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "divider",
+              bgcolor: "background.paper",
+            }}
           >
-            Назад к архиву
-          </Button>
-        </Stack>
+            <CircularProgress size={40} thickness={4} />
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              Загрузка карточки диалога...
+            </Typography>
+          </Paper>
+        ) : ticket ? (
+          /* Двухколоночный интерфейс (SRS Таблица 9, Таблица 10) */
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: 2.5,
+              alignItems: "stretch",
+            }}
+          >
+            {/* Левая/Центральная зона: Чат диалога */}
+            <Paper
+              elevation={0}
+              data-testid="chat-container-panel"
+              sx={{
+                flex: 1,
+                minWidth: 0,
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: "divider",
+                bgcolor: "background.paper",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                minHeight: { xs: 500, md: 680 },
+              }}
+            >
+              {/* Шапка чата с клиентом */}
+              <Box
+                sx={{
+                  px: 3,
+                  py: 2,
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "#F8F9FE"),
+                  borderBottom: "1px solid",
+                  borderColor: "divider",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                  <M3Icon name="chat" size={22} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Диалог с клиентом Telegram
+                  </Typography>
+                </Stack>
+                <Typography variant="caption" color="text.secondary">
+                  {messages.length} {messages.length === 1 ? "сообщение" : "сообщений"}
+                </Typography>
+              </Box>
 
-        <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-          <div>
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              Тикет #{id || "0000"}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Детализированный просмотр переписки и журнала событий обращения
-            </Typography>
-          </div>
-          <Chip label="Просмотр" color="default" variant="outlined" />
-        </Stack>
+              {/* Область переписки (лента сообщений) */}
+              <MessageList
+                messages={messages}
+                onRetry={handleRetryMessage}
+                onImageClick={handleImageClick}
+              />
 
-        <Card sx={{ p: 4, textAlign: "center", borderRadius: 3, border: "1px solid", borderColor: "divider" }}>
-          <CardContent>
-            <Box sx={{ color: "primary.main", mb: 1.5 }}>
-              <M3Icon name="chat" size={48} />
-            </Box>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-              Диалог тикета #{id}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 460, mx: "auto" }}>
-              Полная лента диалога с отправкой сообщений и вложений реализуется в задаче TUSS-FE-10.
-            </Typography>
-          </CardContent>
-        </Card>
+              {/* Форма набора сообщения и вложений */}
+              <MessageComposer
+                onSendMessage={handleSendMessage}
+                disabled={isReadOnly}
+                isSending={isSending}
+              />
+            </Paper>
+
+            {/* Правая зона: Информационный сайдбар тикета */}
+            <TicketSidebar
+              ticket={ticket}
+              userRole={user?.role}
+              isReadOnly={isReadOnly}
+              onOpenEscalateModal={() => setIsEscalateModalOpen(true)}
+              onOpenCloseModal={() => setIsCloseModalOpen(true)}
+            />
+          </Box>
+        ) : null}
+
+        {/* Модальное окно просмотра изображений в полном размере */}
+        <ImageLightbox
+          open={lightboxState.open}
+          imageUrl={lightboxState.url}
+          fileName={lightboxState.fileName}
+          onClose={() => setLightboxState({ open: false, url: null })}
+        />
+
+        {/* Модальное окно эскалации на L2 [TUSS-FE-14] */}
+        {ticket && (
+          <EscalateTicketModal
+            open={isEscalateModalOpen}
+            ticketNumber={ticket.ticketNumber}
+            isLoading={isActionLoading}
+            onConfirm={handleConfirmEscalate}
+            onClose={() => setIsEscalateModalOpen(false)}
+          />
+        )}
+
+        {/* Модальное окно закрытия тикета с CSAT [TUSS-FE-15] */}
+        {ticket && (
+          <CloseTicketModal
+            open={isCloseModalOpen}
+            ticketNumber={ticket.ticketNumber}
+            isLoading={isActionLoading}
+            onConfirm={handleConfirmClose}
+            onClose={() => setIsCloseModalOpen(false)}
+          />
+        )}
       </Box>
     </RoleGuard>
   );

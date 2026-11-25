@@ -41,7 +41,7 @@ export default function AdminAnalyticsRoute() {
               key={kpi.title}
               sx={{
                 p: 2.5,
-                borderRadius: 3,
+                borderRadius: 2,
                 border: "1px solid",
                 borderColor: "divider",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
@@ -55,7 +55,7 @@ export default function AdminAnalyticsRoute() {
                   sx={{
                     width: 36,
                     height: 36,
-                    borderRadius: 2,
+                    borderRadius: 1.5,
                     backgroundColor: `${kpi.color}14`,
                     color: kpi.color,
                     display: "flex",
@@ -76,7 +76,7 @@ export default function AdminAnalyticsRoute() {
           ))}
         </Box>
 
-        <Card sx={{ p: 4, textAlign: "center", borderRadius: 3, border: "1px solid", borderColor: "divider" }}>
+        <Card sx={{ p: 4, textAlign: "center", borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
           <CardContent>
             <Box sx={{ color: "primary.main", mb: 1.5 }}>
               <M3Icon name="insights" size={48} />

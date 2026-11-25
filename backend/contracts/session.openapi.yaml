@@ -1,0 +1,118 @@
+openapi: 3.0.3
+info:
+  title: Analytics session validation API
+  version: 1.0.0
+paths:
+  /internal/auth/v1/session:
+    get:
+      operationId: validateUserSession
+      description: Internal endpoint; never exposed by the public reverse proxy.
+      security:
+        - userBearer: []
+      parameters:
+        - name: X-Request-Id
+          in: header
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Active user with a company
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Session' }
+              example:
+                user_id: 8cb36d3a-ac56-4ef6-aa74-b3fca6184fd4
+                company_id: 0b1c9a3e-5d0e-4c53-9d6e-0a7f2f6c1b11
+                role: admin
+                session_expires_at: '2026-11-20T10:00:00Z'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/NoCompany' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+components:
+  securitySchemes:
+    userBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Session:
+      type: object
+      required: [user_id, company_id, role, session_expires_at]
+      properties:
+        user_id: { type: string, format: uuid }
+        company_id: { type: string, format: uuid }
+        role: { type: string, enum: [admin, operator_l1, operator_l2] }
+        session_expires_at: { type: string, format: date-time }
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, request_id]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details: { type: object, nullable: true, additionalProperties: true }
+            request_id: { type: string, format: uuid }
+    UnauthorizedError:
+      allOf:
+        - { $ref: '#/components/schemas/ErrorEnvelope' }
+        - type: object
+          properties:
+            error:
+              type: object
+              required: [code]
+              properties: { code: { type: string, enum: [UNAUTHORIZED] } }
+    AccessDeniedError:
+      allOf:
+        - { $ref: '#/components/schemas/ErrorEnvelope' }
+        - type: object
+          properties:
+            error:
+              type: object
+              required: [code]
+              properties: { code: { type: string, enum: [ACCESS_DENIED] } }
+    ServiceUnavailableError:
+      allOf:
+        - { $ref: '#/components/schemas/ErrorEnvelope' }
+        - type: object
+          properties:
+            error:
+              type: object
+              required: [code]
+              properties: { code: { type: string, enum: [SERVICE_UNAVAILABLE] } }
+  responses:
+    Unauthorized:
+      description: Invalid, expired, revoked or blocked session
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/UnauthorizedError' }
+          example:
+            error:
+              code: UNAUTHORIZED
+              message: Session is not active
+              details: null
+              request_id: 5979691d-f67a-4c85-92de-203fcb4a94bc
+    NoCompany:
+      description: Valid user has not completed company onboarding
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/AccessDeniedError' }
+          example:
+            error:
+              code: ACCESS_DENIED
+              message: User is not attached to a company
+              details: null
+              request_id: 5979691d-f67a-4c85-92de-203fcb4a94bc
+    Unavailable:
+      description: Session storage is unavailable
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ServiceUnavailableError' }
+          example:
+            error:
+              code: SERVICE_UNAVAILABLE
+              message: Session validation is temporarily unavailable
+              details: null
+              request_id: 5979691d-f67a-4c85-92de-203fcb4a94bc
