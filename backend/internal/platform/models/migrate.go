@@ -63,7 +63,6 @@ func migrateBaseline(db *gorm.DB) error {
 			return fmt.Errorf("create enum type: %w", err)
 		}
 	}
-
 	// AutoMigrate creates the tables and the ordinary indexes declared in model tags.
 	// The order is parent tables first, then dependent tables.
 	if err := db.AutoMigrate(
@@ -295,6 +294,7 @@ func MigrateDown(db *gorm.DB) error {
 		`DROP TABLE IF EXISTS tickets CASCADE`,
 		`DROP TABLE IF EXISTS clients CASCADE`,
 		`DROP TABLE IF EXISTS company_invitations CASCADE`,
+		`DROP TABLE IF EXISTS connection_code_attempts CASCADE`,
 		`DROP TABLE IF EXISTS operator_connection_codes CASCADE`,
 		`DROP TABLE IF EXISTS user_sessions CASCADE`,
 		`DROP TABLE IF EXISTS users CASCADE`,

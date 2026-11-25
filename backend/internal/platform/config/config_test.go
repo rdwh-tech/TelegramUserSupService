@@ -15,6 +15,9 @@ var configEnvironment = []string{
 	"OUTBOX_MAX_ATTEMPTS", "OUTBOX_RETRY_BASE", "OUTBOX_RETRY_MAX",
 	"DB_CONNECT_TIMEOUT", "DB_MAX_OPEN_CONNS", "DB_MAX_IDLE_CONNS", "DB_CONN_MAX_LIFETIME",
 	"HTTP_READ_HEADER_TIMEOUT", "HTTP_IDLE_TIMEOUT", "HTTP_SHUTDOWN_TIMEOUT", "HTTP_READINESS_TIMEOUT",
+	"AUTH_JWT_ISSUER", "AUTH_JWT_AUDIENCE", "AUTH_ACCESS_TTL", "AUTH_REFRESH_TTL", "AUTH_IDLE_TTL",
+	"AUTH_LOGIN_WINDOW", "AUTH_LOGIN_MAX_FAILURES", "AUTH_LOGIN_LOCK_DURATION",
+	"AUTH_CODE_WINDOW", "AUTH_CODE_MAX_FAILURES", "AUTH_CODE_LOCK_DURATION",
 }
 
 func inWorkingDirectory(t *testing.T, dir string) {
@@ -73,6 +76,9 @@ func TestLoadWithoutDotenv(t *testing.T) {
 	}
 	if cfg.Server.ReadHeaderTimeout != 5*time.Second || cfg.Server.IdleTimeout != time.Minute || cfg.Server.ReadinessTimeout != time.Second {
 		t.Fatalf("unexpected HTTP defaults: %+v", cfg.Server)
+	}
+	if cfg.Auth.JWTIssuer != "tuss-api" || cfg.Auth.JWTAudience != "tuss-web" || cfg.Auth.AccessTTL != 24*time.Hour || cfg.Auth.RefreshTTL != 7*24*time.Hour || cfg.Auth.LoginMaxFailures != 5 || cfg.Auth.CodeMaxFailures != 5 {
+		t.Fatalf("unexpected auth defaults: %+v", cfg.Auth)
 	}
 }
 
@@ -150,6 +156,9 @@ func TestConfigValidation(t *testing.T) {
 		{name: "negative max open", variable: "DB_MAX_OPEN_CONNS", value: "-1"},
 		{name: "negative max idle", variable: "DB_MAX_IDLE_CONNS", value: "-1"},
 		{name: "idle exceeds open", variable: "DB_MAX_IDLE_CONNS", value: "11"},
+		{name: "access ttl exceeds maximum", variable: "AUTH_ACCESS_TTL", value: "25h"},
+		{name: "blank issuer", variable: "AUTH_JWT_ISSUER", value: " "},
+		{name: "zero login failures", variable: "AUTH_LOGIN_MAX_FAILURES", value: "0"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

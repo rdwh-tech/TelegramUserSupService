@@ -13,9 +13,12 @@ import (
 //go:embed 0002_schema_and_outbox.sql
 var schemaAndOutboxSQL string
 
+//go:embed 0003_auth.sql
+var authSQL string
+
 const (
 	baselineVersion = 1
-	currentVersion  = 2
+	currentVersion  = 3
 )
 
 // Apply records the adopted API-01 baseline and applies every later migration
@@ -43,18 +46,27 @@ func Apply(db *gorm.DB) error {
 			return fmt.Errorf("migrations: record baseline: %w", err)
 		}
 
-		var applied bool
-		if err := tx.Raw(`SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE version = ?)`, currentVersion).Scan(&applied).Error; err != nil {
-			return fmt.Errorf("migrations: inspect version: %w", err)
+		steps := []struct {
+			version   int
+			name, sql string
+		}{
+			{2, "api02_schema_and_outbox", schemaAndOutboxSQL},
+			{3, "api03_auth", authSQL},
 		}
-		if applied {
-			return nil
-		}
-		if err := tx.Exec(schemaAndOutboxSQL).Error; err != nil {
-			return fmt.Errorf("migrations: apply version %d: %w", currentVersion, err)
-		}
-		if err := tx.Exec(`INSERT INTO schema_migrations (version, name) VALUES (?, 'api02_schema_and_outbox')`, currentVersion).Error; err != nil {
-			return fmt.Errorf("migrations: record version %d: %w", currentVersion, err)
+		for _, step := range steps {
+			var applied bool
+			if err := tx.Raw(`SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE version = ?)`, step.version).Scan(&applied).Error; err != nil {
+				return fmt.Errorf("migrations: inspect version: %w", err)
+			}
+			if applied {
+				continue
+			}
+			if err := tx.Exec(step.sql).Error; err != nil {
+				return fmt.Errorf("migrations: apply version %d: %w", step.version, err)
+			}
+			if err := tx.Exec(`INSERT INTO schema_migrations (version, name) VALUES (?, ?)`, step.version, step.name).Error; err != nil {
+				return fmt.Errorf("migrations: record version %d: %w", step.version, err)
+			}
 		}
 		return nil
 	})
