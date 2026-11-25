@@ -110,6 +110,9 @@ const (
 	AuditSLASettingsUpdated     AuditActionType = "sla_settings_updated"
 	AuditBotSettingsUpdated     AuditActionType = "bot_settings_updated"
 	AuditScheduleUpdated        AuditActionType = "schedule_updated"
+	AuditUserRegistered         AuditActionType = "user_registered"
+	AuditProfileUpdated         AuditActionType = "profile_updated"
+	AuditCompanyCreated         AuditActionType = "company_created"
 )
 
 type Company struct {
@@ -178,15 +181,20 @@ type CompanyFAQ struct {
 func (CompanyFAQ) TableName() string { return "company_faqs" }
 
 type User struct {
-	ID           uuid.UUID     `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	CompanyID    *uuid.UUID    `gorm:"type:uuid;index"`
-	Login        string        `gorm:"type:varchar(100);not null;uniqueIndex"`
-	PasswordHash string        `gorm:"type:varchar(255);not null"`
-	FullName     string        `gorm:"type:varchar(255);not null"`
-	Role         UserRole      `gorm:"type:user_role;not null"`
-	IsBlocked    bool          `gorm:"not null;default:false"`
-	Sessions     []UserSession `gorm:"foreignKey:UserID"`
-	Company      *Company      `gorm:"foreignKey:CompanyID"`
+	ID                         uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	CompanyID                  *uuid.UUID `gorm:"type:uuid;index"`
+	Login                      string     `gorm:"type:varchar(100);not null;uniqueIndex"`
+	PasswordHash               string     `gorm:"type:varchar(255);not null"`
+	FullName                   string     `gorm:"type:varchar(255);not null"`
+	Role                       UserRole   `gorm:"type:user_role;not null"`
+	IsBlocked                  bool       `gorm:"not null;default:false"`
+	CreatedAt                  time.Time  `gorm:"not null;default:now()"`
+	UpdatedAt                  time.Time  `gorm:"not null;default:now()"`
+	FailedLoginCount           int        `gorm:"not null;default:0"`
+	FailedLoginWindowStartedAt *time.Time
+	LoginLockedUntil           *time.Time
+	Sessions                   []UserSession `gorm:"foreignKey:UserID"`
+	Company                    *Company      `gorm:"foreignKey:CompanyID"`
 }
 
 func (User) TableName() string { return "users" }
@@ -197,6 +205,9 @@ type UserSession struct {
 	RefreshTokenHash string    `gorm:"type:varchar(255);not null;uniqueIndex"`
 	ExpiresAt        time.Time `gorm:"not null"`
 	IsRevoked        bool      `gorm:"not null;default:false"`
+	CreatedAt        time.Time `gorm:"not null;default:now()"`
+	LastActivityAt   time.Time `gorm:"not null"`
+	RevokedAt        *time.Time
 }
 
 func (UserSession) TableName() string { return "user_sessions" }
@@ -207,6 +218,8 @@ type OperatorConnectionCode struct {
 	Code       string    `gorm:"type:varchar(10);not null"`
 	ExpiresAt  time.Time `gorm:"not null"`
 	IsUsed     bool      `gorm:"not null;default:false"`
+	CreatedAt  time.Time `gorm:"not null;default:now()"`
+	UsedAt     *time.Time
 }
 
 func (OperatorConnectionCode) TableName() string { return "operator_connection_codes" }
@@ -219,6 +232,9 @@ type CompanyInvitation struct {
 	RoleToAssign       InvitationRole   `gorm:"type:invitation_role;not null"`
 	Status             InvitationStatus `gorm:"type:invitation_status;not null"`
 	ConnectionCodeUsed *string          `gorm:"type:varchar(10)"`
+	CreatedAt          time.Time        `gorm:"not null;default:now()"`
+	UpdatedAt          time.Time        `gorm:"not null;default:now()"`
+	DecidedAt          *time.Time
 }
 
 func (CompanyInvitation) TableName() string { return "company_invitations" }
@@ -338,7 +354,7 @@ func (BroadcastCampaign) TableName() string { return "broadcast_campaigns" }
 
 type AuditLog struct {
 	ID         uuid.UUID       `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	CompanyID  uuid.UUID       `gorm:"type:uuid;not null;index"`
+	CompanyID  *uuid.UUID      `gorm:"type:uuid;index"`
 	UserID     *uuid.UUID      `gorm:"type:uuid;index"`
 	ActionType AuditActionType `gorm:"type:audit_action_type;not null"`
 	TargetType *string         `gorm:"type:varchar(50)"`
@@ -349,3 +365,12 @@ type AuditLog struct {
 }
 
 func (AuditLog) TableName() string { return "audit_logs" }
+
+type ConnectionCodeAttempt struct {
+	AdminID         uuid.UUID `gorm:"type:uuid;primaryKey"`
+	WindowStartedAt time.Time `gorm:"not null"`
+	FailureCount    int       `gorm:"not null;default:0"`
+	LockedUntil     *time.Time
+}
+
+func (ConnectionCodeAttempt) TableName() string { return "connection_code_attempts" }

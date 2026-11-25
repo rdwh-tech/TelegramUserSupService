@@ -33,6 +33,12 @@ func MigrateUp(db *gorm.DB) error {
 			return fmt.Errorf("create enum type: %w", err)
 		}
 	}
+	// Values added by API-03. ALTER TYPE is idempotent and preserves existing rows.
+	for _, value := range []string{"user_registered", "profile_updated", "company_created"} {
+		if err := db.Exec(fmt.Sprintf(`ALTER TYPE audit_action_type ADD VALUE IF NOT EXISTS '%s'`, value)).Error; err != nil {
+			return fmt.Errorf("extend audit action type: %w", err)
+		}
+	}
 
 	// AutoMigrate creates the tables and the ordinary indexes declared in model tags.
 	// The order is parent tables first, then dependent tables.
@@ -46,6 +52,7 @@ func MigrateUp(db *gorm.DB) error {
 		&UserSession{},
 		&OperatorConnectionCode{},
 		&CompanyInvitation{},
+		&ConnectionCodeAttempt{},
 		&Client{},
 		&Ticket{},
 		&TicketStatusHistory{},
@@ -206,14 +213,12 @@ func MigrateUp(db *gorm.DB) error {
 				);
 			END IF;
 		END $$`,
-		`DO $$ BEGIN
-			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_user_company_role' AND conrelid = 'users'::regclass) THEN
-				ALTER TABLE users ADD CONSTRAINT chk_user_company_role CHECK (
-					(company_id IS NULL AND role = 'unassigned_operator') OR
-					(company_id IS NOT NULL AND role <> 'unassigned_operator')
-				);
-			END IF;
-		END $$`,
+		`ALTER TABLE users DROP CONSTRAINT IF EXISTS chk_user_company_role`,
+		`ALTER TABLE users ADD CONSTRAINT chk_user_company_role CHECK (
+			(company_id IS NULL AND role IN ('admin','unassigned_operator')) OR
+			(company_id IS NOT NULL AND role IN ('admin','operator_l1','operator_l2'))
+		)`,
+		`ALTER TABLE audit_logs ALTER COLUMN company_id DROP NOT NULL`,
 		`DO $$ BEGIN
 			IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_message_attachment_size' AND conrelid = 'message_attachments'::regclass) THEN
 				ALTER TABLE message_attachments ADD CONSTRAINT chk_message_attachment_size
@@ -230,6 +235,12 @@ func MigrateUp(db *gorm.DB) error {
 		`CREATE UNIQUE INDEX IF NOT EXISTS idx_uq_active_ticket_per_operator
 			ON tickets(assigned_operator_id) WHERE status = 'in_progress' AND assigned_operator_id IS NOT NULL`,
 		`CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at)`,
+		`DO $$ BEGIN IF EXISTS (SELECT 1 FROM users GROUP BY lower(btrim(login)) HAVING count(*) > 1) THEN RAISE EXCEPTION 'cannot create case-insensitive login index: conflicting normalized logins exist'; END IF; END $$`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_login_normalized ON users (lower(btrim(login)))`,
+		`CREATE INDEX IF NOT EXISTS idx_user_sessions_active ON user_sessions(id, user_id)`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_connection_codes_code ON operator_connection_codes(code)`,
+		`CREATE INDEX IF NOT EXISTS idx_connection_codes_operator_active ON operator_connection_codes(operator_id, is_used, expires_at)`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_invitations_pending ON company_invitations(company_id, operator_id) WHERE status = 'pending'`,
 	}
 
 	for _, stmt := range constraints {
@@ -259,6 +270,7 @@ func MigrateDown(db *gorm.DB) error {
 		`DROP TABLE IF EXISTS tickets CASCADE`,
 		`DROP TABLE IF EXISTS clients CASCADE`,
 		`DROP TABLE IF EXISTS company_invitations CASCADE`,
+		`DROP TABLE IF EXISTS connection_code_attempts CASCADE`,
 		`DROP TABLE IF EXISTS operator_connection_codes CASCADE`,
 		`DROP TABLE IF EXISTS user_sessions CASCADE`,
 		`DROP TABLE IF EXISTS users CASCADE`,

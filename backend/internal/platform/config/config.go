@@ -26,7 +26,18 @@ type DbConfig struct {
 }
 
 type AuthConfig struct {
-	Secret string
+	Secret           string
+	JWTIssuer        string
+	JWTAudience      string
+	AccessTTL        time.Duration
+	RefreshTTL       time.Duration
+	IdleTTL          time.Duration
+	LoginWindow      time.Duration
+	LoginMaxFailures int
+	LoginLock        time.Duration
+	CodeWindow       time.Duration
+	CodeMaxFailures  int
+	CodeLock         time.Duration
 }
 
 type HttpServerConfig struct {
@@ -118,7 +129,54 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	accessTTL, err := parseDuration("AUTH_ACCESS_TTL", "24h")
+	if err != nil {
+		return nil, err
+	}
+	if accessTTL > 24*time.Hour {
+		return nil, fmt.Errorf("AUTH_ACCESS_TTL must not exceed 24h")
+	}
+	refreshTTL, err := parseDuration("AUTH_REFRESH_TTL", "168h")
+	if err != nil {
+		return nil, err
+	}
+	idleTTL, err := parseDuration("AUTH_IDLE_TTL", "24h")
+	if err != nil {
+		return nil, err
+	}
+	loginWindow, err := parseDuration("AUTH_LOGIN_WINDOW", "10m")
+	if err != nil {
+		return nil, err
+	}
+	loginMax, err := parseInt("AUTH_LOGIN_MAX_FAILURES", "5")
+	if err != nil || loginMax <= 0 {
+		return nil, fmt.Errorf("AUTH_LOGIN_MAX_FAILURES must be a positive integer")
+	}
+	loginLock, err := parseDuration("AUTH_LOGIN_LOCK_DURATION", "15m")
+	if err != nil {
+		return nil, err
+	}
+	codeWindow, err := parseDuration("AUTH_CODE_WINDOW", "10m")
+	if err != nil {
+		return nil, err
+	}
+	codeMax, err := parseInt("AUTH_CODE_MAX_FAILURES", "5")
+	if err != nil || codeMax <= 0 {
+		return nil, fmt.Errorf("AUTH_CODE_MAX_FAILURES must be a positive integer")
+	}
+	codeLock, err := parseDuration("AUTH_CODE_LOCK_DURATION", "15m")
+	if err != nil {
+		return nil, err
+	}
 
+	issuer := strings.TrimSpace(value("AUTH_JWT_ISSUER", "tuss-api"))
+	audience := strings.TrimSpace(value("AUTH_JWT_AUDIENCE", "tuss-web"))
+	if issuer == "" {
+		return nil, fmt.Errorf("AUTH_JWT_ISSUER is required")
+	}
+	if audience == "" {
+		return nil, fmt.Errorf("AUTH_JWT_AUDIENCE is required")
+	}
 	cfg := Config{
 		Db: DbConfig{
 			Dsn:             dsn,
@@ -127,7 +185,12 @@ func Load() (*Config, error) {
 			MaxIdleConns:    maxIdle,
 			ConnMaxLifetime: connMaxLifetime,
 		},
-		Auth: AuthConfig{Secret: secret},
+		Auth: AuthConfig{
+			Secret: secret, JWTIssuer: issuer, JWTAudience: audience,
+			AccessTTL: accessTTL, RefreshTTL: refreshTTL, IdleTTL: idleTTL,
+			LoginWindow: loginWindow, LoginMaxFailures: loginMax, LoginLock: loginLock,
+			CodeWindow: codeWindow, CodeMaxFailures: codeMax, CodeLock: codeLock,
+		},
 		Server: HttpServerConfig{
 			HTTPAddr:          value("HTTPAddr", ":8080"),
 			ReadHeaderTimeout: readHeaderTimeout,
