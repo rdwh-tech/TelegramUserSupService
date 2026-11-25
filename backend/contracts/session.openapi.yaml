@@ -25,6 +25,7 @@ paths:
                 company_id: 0b1c9a3e-5d0e-4c53-9d6e-0a7f2f6c1b11
                 role: admin
                 session_expires_at: '2026-11-20T10:00:00Z'
+        '400': { $ref: '#/components/responses/Validation' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/NoCompany' }
         '503': { $ref: '#/components/responses/Unavailable' }
@@ -83,6 +84,11 @@ components:
               required: [code]
               properties: { code: { type: string, enum: [SERVICE_UNAVAILABLE] } }
   responses:
+    Validation:
+      description: Missing or non-canonical request ID
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
     Unauthorized:
       description: Invalid, expired, revoked or blocked session
       content:
