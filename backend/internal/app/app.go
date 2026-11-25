@@ -3,17 +3,16 @@ package app
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
+	"net"
 	"net/http"
-	"time"
 
 	"github.com/rdwh-tech/TelegramUserSupService/internal/platform/config"
 	"github.com/rdwh-tech/TelegramUserSupService/internal/platform/database"
 )
 
 func Run(ctx context.Context, cfg *config.Config) error {
-	db, err := database.NewDatabase(cfg.Db.Dsn)
+	db, err := database.Open(ctx, cfg.Db)
 	if err != nil {
 		return err
 	}
@@ -27,27 +26,16 @@ func Run(ctx context.Context, cfg *config.Config) error {
 		}
 	}()
 
+	listener, err := net.Listen("tcp", cfg.Server.HTTPAddr)
+	if err != nil {
+		return errors.New("listen: address unavailable")
+	}
 	server := &http.Server{
-		Addr:              cfg.Server.HTTPAddr,
-		Handler:           NewRouter(),
-		ReadHeaderTimeout: 5 * time.Second,
+		Handler: NewRouter(func(readyCtx context.Context) error {
+			return database.Ready(readyCtx, db)
+		}, cfg.Server.ReadinessTimeout, nil),
+		ReadHeaderTimeout: cfg.Server.ReadHeaderTimeout,
+		IdleTimeout:       cfg.Server.IdleTimeout,
 	}
-
-	errCh := make(chan error, 1)
-	go func() {
-		fmt.Println("server running on", cfg.Server.HTTPAddr)
-		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			errCh <- err
-		}
-	}()
-
-	select {
-	case err := <-errCh:
-		return err
-	case <-ctx.Done():
-	}
-
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	return server.Shutdown(shutdownCtx)
+	return serve(ctx, server, listener, cfg.Server.ShutdownTimeout)
 }
