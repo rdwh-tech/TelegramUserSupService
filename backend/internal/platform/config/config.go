@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -14,6 +15,8 @@ import (
 type Config struct {
 	Db     DbConfig
 	Auth   AuthConfig
+	Rabbit RabbitConfig
+	Outbox OutboxConfig
 	Server HttpServerConfig
 }
 
@@ -27,6 +30,22 @@ type DbConfig struct {
 
 type AuthConfig struct {
 	Secret string
+}
+
+type RabbitConfig struct {
+	URL            string
+	Exchange       string
+	ConnectTimeout time.Duration
+}
+
+type OutboxConfig struct {
+	BatchSize      int
+	PollInterval   time.Duration
+	LeaseDuration  time.Duration
+	PublishTimeout time.Duration
+	MaxAttempts    int
+	RetryBase      time.Duration
+	RetryMax       time.Duration
 }
 
 type HttpServerConfig struct {
@@ -82,6 +101,12 @@ func Load() (*Config, error) {
 	if strings.TrimSpace(secret) == "" {
 		return nil, fmt.Errorf("SECRET is required")
 	}
+	rabbitURL := value("RABBITMQ_URL", "")
+	parsedRabbitURL, parseRabbitErr := url.Parse(rabbitURL)
+	if strings.TrimSpace(rabbitURL) == "" || parseRabbitErr != nil ||
+		(parsedRabbitURL.Scheme != "amqp" && parsedRabbitURL.Scheme != "amqps") || parsedRabbitURL.Host == "" {
+		return nil, fmt.Errorf("RABBITMQ_URL must be a valid AMQP URL")
+	}
 
 	connectTimeout, err := parseDuration("DB_CONNECT_TIMEOUT", "5s")
 	if err != nil {
@@ -118,6 +143,41 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	rabbitConnectTimeout, err := parseDuration("RABBITMQ_CONNECT_TIMEOUT", "5s")
+	if err != nil {
+		return nil, err
+	}
+	outboxPollInterval, err := parseDuration("OUTBOX_POLL_INTERVAL", "500ms")
+	if err != nil {
+		return nil, err
+	}
+	outboxLeaseDuration, err := parseDuration("OUTBOX_LEASE_DURATION", "30s")
+	if err != nil {
+		return nil, err
+	}
+	outboxPublishTimeout, err := parseDuration("OUTBOX_PUBLISH_TIMEOUT", "5s")
+	if err != nil {
+		return nil, err
+	}
+	outboxRetryBase, err := parseDuration("OUTBOX_RETRY_BASE", "1s")
+	if err != nil {
+		return nil, err
+	}
+	outboxRetryMax, err := parseDuration("OUTBOX_RETRY_MAX", "30s")
+	if err != nil {
+		return nil, err
+	}
+	if outboxRetryMax < outboxRetryBase {
+		return nil, fmt.Errorf("OUTBOX_RETRY_MAX must not be less than OUTBOX_RETRY_BASE")
+	}
+	outboxBatchSize, err := parseInt("OUTBOX_BATCH_SIZE", "10")
+	if err != nil || outboxBatchSize <= 0 {
+		return nil, fmt.Errorf("OUTBOX_BATCH_SIZE must be a positive integer")
+	}
+	outboxMaxAttempts, err := parseInt("OUTBOX_MAX_ATTEMPTS", "5")
+	if err != nil || outboxMaxAttempts <= 0 {
+		return nil, fmt.Errorf("OUTBOX_MAX_ATTEMPTS must be a positive integer")
+	}
 
 	cfg := Config{
 		Db: DbConfig{
@@ -128,6 +188,14 @@ func Load() (*Config, error) {
 			ConnMaxLifetime: connMaxLifetime,
 		},
 		Auth: AuthConfig{Secret: secret},
+		Rabbit: RabbitConfig{
+			URL: rabbitURL, Exchange: value("RABBITMQ_EXCHANGE", "support.events"), ConnectTimeout: rabbitConnectTimeout,
+		},
+		Outbox: OutboxConfig{
+			BatchSize: outboxBatchSize, PollInterval: outboxPollInterval,
+			LeaseDuration: outboxLeaseDuration, PublishTimeout: outboxPublishTimeout,
+			MaxAttempts: outboxMaxAttempts, RetryBase: outboxRetryBase, RetryMax: outboxRetryMax,
+		},
 		Server: HttpServerConfig{
 			HTTPAddr:          value("HTTPAddr", ":8080"),
 			ReadHeaderTimeout: readHeaderTimeout,
