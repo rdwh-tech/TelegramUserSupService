@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ "main", "dev", "web-redesign", "feature/**" ]
+    branches: [ "main", "dev", "web-redesign", "feature/**", "ci-integration-test" ]
   pull_request:
     branches: [ "main", "dev", "web-redesign", "feature/**" ]
   workflow_dispatch:
@@ -76,3 +76,54 @@ jobs:
 
       - name: Show coverage
         run: go tool cover -func=coverage.out | tail -n 1
+
+  test-backend-integration:
+    name: 🗄️ Backend Integration (PostgreSQL)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16.6-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: integration_tests
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d integration_tests"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      rabbitmq:
+        image: rabbitmq:4.0.5-management-alpine
+        env:
+          RABBITMQ_DEFAULT_USER: ci
+          RABBITMQ_DEFAULT_PASS: ci-password
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run integration tests
+        env:
+          TEST_DSN: postgres://postgres:postgres@127.0.0.1:5432/integration_tests?sslmode=disable
+          TEST_AMQP_URL: amqp://ci:ci-password@127.0.0.1:5672/
+        run: go test -count=1 -race -tags=integration ./...
