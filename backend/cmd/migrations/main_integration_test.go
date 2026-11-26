@@ -16,7 +16,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func TestRunMigrationCreatesBaselineSchema(t *testing.T) {
+func TestRunMigrationCreatesCurrentSchema(t *testing.T) {
 	base := os.Getenv("TEST_DSN")
 	if base == "" {
 		t.Fatal("TEST_DSN is required for integration tests")
@@ -53,7 +53,7 @@ func TestRunMigrationCreatesBaselineSchema(t *testing.T) {
 	if err := admin.Raw("SELECT count(*) FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'", schema).Scan(&tableCount).Error; err != nil {
 		t.Fatal(err)
 	}
-	if tableCount != 18 {
-		t.Fatalf("got %d baseline tables, want 18", tableCount)
+	if tableCount != 24 {
+		t.Fatalf("got %d migrated tables, want 24", tableCount)
 	}
 }

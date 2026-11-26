@@ -3,9 +3,10 @@
 package models
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/datatypes"
-	"time"
 )
 
 type UserRole string
@@ -58,6 +59,7 @@ const (
 	TriggerClientMessage      StatusTriggerType = "client_message"
 	TriggerOperatorClose      StatusTriggerType = "operator_close"
 	TriggerOperatorReopen     StatusTriggerType = "operator_reopen"
+	TriggerClientReopen       StatusTriggerType = "client_reopen"
 	TriggerSystemReassign     StatusTriggerType = "system_reassign"
 )
 
@@ -74,6 +76,14 @@ type AttachmentFileType string
 const (
 	AttachmentPhoto    AttachmentFileType = "photo"
 	AttachmentDocument AttachmentFileType = "document"
+)
+
+type MessageDeliveryStatus string
+
+const (
+	DeliveryPending   MessageDeliveryStatus = "pending"
+	DeliveryDelivered MessageDeliveryStatus = "delivered"
+	DeliveryFailed    MessageDeliveryStatus = "failed"
 )
 
 type SLAStatus string
@@ -131,7 +141,7 @@ func (Company) TableName() string { return "companies" }
 type BotConfig struct {
 	ID             uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	CompanyID      uuid.UUID `gorm:"type:uuid;not null;uniqueIndex"`
-	BotToken       string    `gorm:"type:varchar(255);not null"`
+	BotTokenHash   string    `gorm:"type:varchar(64);not null"`
 	BotUsername    *string   `gorm:"type:varchar(255)"`
 	WelcomeMessage string    `gorm:"type:text;not null"`
 	IsConnected    bool      `gorm:"not null;default:false"`
@@ -144,8 +154,8 @@ type CompanySchedule struct {
 	CompanyID    uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:uq_company_schedule_day,priority:1;index"`
 	DayOfWeek    int16     `gorm:"type:smallint;not null;uniqueIndex:uq_company_schedule_day,priority:2"`
 	IsWorkingDay bool      `gorm:"not null;default:true"`
-	StartTime    *string   `gorm:"type:time"`
-	EndTime      *string   `gorm:"type:time"`
+	StartTime    *string   `gorm:"type:time without time zone"`
+	EndTime      *string   `gorm:"type:time without time zone"`
 	Timezone     string    `gorm:"type:varchar(50);default:'Europe/Moscow'"`
 }
 
@@ -241,6 +251,8 @@ type Ticket struct {
 	ClientID            uuid.UUID       `gorm:"type:uuid;not null;index"`
 	AssignedOperatorID  *uuid.UUID      `gorm:"type:uuid;index"`
 	SLAPolicyID         uuid.UUID       `gorm:"type:uuid;not null;index"`
+	ScheduleVersionID   *uuid.UUID      `gorm:"type:uuid;index"`
+	CurrentCycleNumber  int             `gorm:"not null;default:1"`
 	Status              TicketStatus    `gorm:"type:ticket_status;not null"`
 	EscalationLevel     EscalationLevel `gorm:"type:escalation_level;not null"`
 	FirstMessagePreview *string         `gorm:"type:varchar(500)"`
@@ -249,8 +261,10 @@ type Ticket struct {
 	EscalatedAt         *time.Time
 	FirstResponseAt     *time.Time
 	ClosedAt            *time.Time
-	CreatedAt           time.Time `gorm:"not null;default:now()"`
-	UpdatedAt           time.Time `gorm:"not null;default:now()"`
+	ClosedByUserID      *uuid.UUID `gorm:"type:uuid"`
+	LastOperatorID      *uuid.UUID `gorm:"type:uuid"`
+	CreatedAt           time.Time  `gorm:"not null;default:now()"`
+	UpdatedAt           time.Time  `gorm:"not null;default:now()"`
 }
 
 func (Ticket) TableName() string { return "tickets" }
@@ -274,8 +288,10 @@ type TicketMessage struct {
 	SenderType        MessageSenderType `gorm:"type:message_sender_type;not null"`
 	SenderUserID      *uuid.UUID        `gorm:"type:uuid"`
 	TelegramMessageID *int64
-	Content           *string             `gorm:"type:text"`
-	IsDelivered       bool                `gorm:"not null;default:true"`
+	Content           *string               `gorm:"type:text"`
+	DeliveryStatus    MessageDeliveryStatus `gorm:"type:message_delivery_status;not null;default:'pending'"`
+	DeliveryError     *string               `gorm:"type:text"`
+	DeliveryUpdatedAt *time.Time
 	CreatedAt         time.Time           `gorm:"not null;default:now()"`
 	Attachments       []MessageAttachment `gorm:"foreignKey:MessageID"`
 }
@@ -289,7 +305,7 @@ type MessageAttachment struct {
 	FileName       *string            `gorm:"type:varchar(255)"`
 	FileSizeBytes  int64              `gorm:"not null"`
 	MimeType       string             `gorm:"type:varchar(100);not null"`
-	TelegramFileID string             `gorm:"type:varchar(255);not null;uniqueIndex"`
+	TelegramFileID *string            `gorm:"type:varchar(255)"`
 	StorageURL     *string            `gorm:"type:text"`
 }
 
@@ -315,7 +331,7 @@ type TicketSLAMetric struct {
 	IsTTRBreached    bool      `gorm:"not null;default:false"`
 	IsSLAViolated    bool      `gorm:"not null;default:false"`
 	SLAStatus        SLAStatus `gorm:"type:sla_status;not null"`
-	LastCalculatedAt *time.Time
+	CalculatedAt     *time.Time
 }
 
 func (TicketSLAMetric) TableName() string { return "ticket_sla_metrics" }
@@ -338,7 +354,7 @@ func (BroadcastCampaign) TableName() string { return "broadcast_campaigns" }
 
 type AuditLog struct {
 	ID         uuid.UUID       `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	CompanyID  uuid.UUID       `gorm:"type:uuid;not null;index"`
+	CompanyID  *uuid.UUID      `gorm:"type:uuid;index"`
 	UserID     *uuid.UUID      `gorm:"type:uuid;index"`
 	ActionType AuditActionType `gorm:"type:audit_action_type;not null"`
 	TargetType *string         `gorm:"type:varchar(50)"`
@@ -349,3 +365,49 @@ type AuditLog struct {
 }
 
 func (AuditLog) TableName() string { return "audit_logs" }
+
+// CompanyScheduleVersion is an immutable snapshot used by tickets and SLA
+// calculations. Updating the editable weekly schedule creates a new version.
+type CompanyScheduleVersion struct {
+	ID        uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	CompanyID uuid.UUID      `gorm:"type:uuid;not null;uniqueIndex:uq_company_schedule_version,priority:1"`
+	Version   int            `gorm:"not null;uniqueIndex:uq_company_schedule_version,priority:2"`
+	Schedule  datatypes.JSON `gorm:"type:jsonb;not null"`
+	CreatedAt time.Time      `gorm:"not null;default:now()"`
+}
+
+func (CompanyScheduleVersion) TableName() string { return "company_schedule_versions" }
+
+// TicketCycle preserves SLA boundaries across reopen operations.
+type TicketCycle struct {
+	ID                uuid.UUID       `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	TicketID          uuid.UUID       `gorm:"type:uuid;not null;uniqueIndex:uq_ticket_cycle,priority:1"`
+	CycleNumber       int             `gorm:"not null;uniqueIndex:uq_ticket_cycle,priority:2"`
+	SLAPolicyID       uuid.UUID       `gorm:"type:uuid;not null"`
+	ScheduleVersionID uuid.UUID       `gorm:"type:uuid;not null"`
+	EscalationLevel   EscalationLevel `gorm:"type:escalation_level;not null"`
+	StartedAt         time.Time       `gorm:"not null"`
+	EscalatedAt       *time.Time
+	FirstResponseAt   *time.Time
+	ClosedAt          *time.Time
+	ClosedByUserID    *uuid.UUID `gorm:"type:uuid"`
+	LastOperatorID    *uuid.UUID `gorm:"type:uuid"`
+}
+
+func (TicketCycle) TableName() string { return "ticket_cycles" }
+
+// IdempotencyRecord stores the stable result of mutating internal API calls.
+type IdempotencyRecord struct {
+	ID             uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	CompanyID      uuid.UUID      `gorm:"type:uuid;not null;uniqueIndex:uq_idempotency_scope,priority:1"`
+	Operation      string         `gorm:"type:varchar(100);not null;uniqueIndex:uq_idempotency_scope,priority:2"`
+	Key            string         `gorm:"type:varchar(255);not null;uniqueIndex:uq_idempotency_scope,priority:3"`
+	RequestHash    string         `gorm:"type:varchar(64);not null"`
+	ResponseStatus int            `gorm:"not null"`
+	ResponseBody   datatypes.JSON `gorm:"type:jsonb;not null"`
+	ResourceID     *uuid.UUID     `gorm:"type:uuid"`
+	CreatedAt      time.Time      `gorm:"not null;default:now()"`
+	ExpiresAt      *time.Time
+}
+
+func (IdempotencyRecord) TableName() string { return "idempotency_records" }

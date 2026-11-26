@@ -10,6 +10,9 @@ import (
 
 var configEnvironment = []string{
 	"DSN", "SECRET", "HTTPAddr",
+	"RABBITMQ_URL", "RABBITMQ_EXCHANGE", "RABBITMQ_CONNECT_TIMEOUT",
+	"OUTBOX_BATCH_SIZE", "OUTBOX_POLL_INTERVAL", "OUTBOX_LEASE_DURATION", "OUTBOX_PUBLISH_TIMEOUT",
+	"OUTBOX_MAX_ATTEMPTS", "OUTBOX_RETRY_BASE", "OUTBOX_RETRY_MAX",
 	"DB_CONNECT_TIMEOUT", "DB_MAX_OPEN_CONNS", "DB_MAX_IDLE_CONNS", "DB_CONN_MAX_LIFETIME",
 	"HTTP_READ_HEADER_TIMEOUT", "HTTP_IDLE_TIMEOUT", "HTTP_SHUTDOWN_TIMEOUT", "HTTP_READINESS_TIMEOUT",
 }
@@ -46,6 +49,7 @@ func clearConfigEnvironment(t *testing.T) {
 			_ = os.Unsetenv(name)
 		})
 	}
+	t.Setenv("RABBITMQ_URL", "amqp://runtime-user:runtime-password@rabbitmq:5672/")
 }
 
 func TestLoadWithoutDotenv(t *testing.T) {
@@ -141,6 +145,7 @@ func TestConfigValidation(t *testing.T) {
 	}{
 		{name: "missing DSN", variable: "DSN", value: ""},
 		{name: "missing secret", variable: "SECRET", value: ""},
+		{name: "missing RabbitMQ URL", variable: "RABBITMQ_URL", value: ""},
 		{name: "invalid duration", variable: "DB_CONNECT_TIMEOUT", value: "five-seconds"},
 		{name: "negative max open", variable: "DB_MAX_OPEN_CONNS", value: "-1"},
 		{name: "negative max idle", variable: "DB_MAX_IDLE_CONNS", value: "-1"},
