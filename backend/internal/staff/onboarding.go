@@ -4,15 +4,14 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"log/slog"
 	"math/big"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/rdwh-tech/TelegramUserSupService/internal/auth"
-	"github.com/rdwh-tech/TelegramUserSupService/internal/platform/models"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
+	"github.com/rdwh-tech/TelegramUserSupService/internal/platform/requestctx"
 )
 
 const codeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -22,12 +21,13 @@ type ConnectionCode struct {
 	Code           string
 	ExpiresAt      time.Time
 	IsUsed         bool
+	CreatedAt      time.Time
 }
 type Invitation struct {
 	ID, CompanyID, OperatorID uuid.UUID
 	CompanyName               string
-	RoleToAssign              models.InvitationRole
-	Status                    models.InvitationStatus
+	RoleToAssign              InvitationRole
+	Status                    InvitationStatus
 	CreatedAt                 time.Time
 }
 type Config struct {
@@ -36,15 +36,22 @@ type Config struct {
 	Lock        time.Duration
 }
 type Service struct {
-	db       *gorm.DB
-	users    *auth.Service
+	repo     Repository
+	users    UserReader
 	cfg      Config
 	now      func() time.Time
 	generate func() (string, error)
+	logger   *slog.Logger
 }
 
-func NewService(db *gorm.DB, users *auth.Service, cfg Config) *Service {
-	return &Service{db: db, users: users, cfg: cfg, now: func() time.Time { return time.Now().UTC() }, generate: randomCode}
+func NewService(repo Repository, users UserReader, cfg Config, logger *slog.Logger) (*Service, error) {
+	if repo == nil || users == nil || cfg.Window <= 0 || cfg.MaxFailures <= 0 || cfg.Lock <= 0 {
+		return nil, auth.ErrValidation
+	}
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &Service{repo: repo, users: users, cfg: cfg, now: func() time.Time { return time.Now().UTC() }, generate: randomCode, logger: logger.With("layer", "service", "component", "staff")}, nil
 }
 func randomCode() (string, error) {
 	b := make([]byte, 6)
@@ -62,249 +69,225 @@ func codeExpiry(now time.Time) time.Time {
 	local := now.In(loc)
 	return time.Date(local.Year(), local.Month(), local.Day()+1, 0, 0, 0, 0, loc).UTC()
 }
-
 func (s *Service) ConnectionCode(ctx context.Context, p auth.Principal) (ConnectionCode, error) {
-	if p.User.Role != models.UserRoleUnassignedOperator || p.User.CompanyID != nil {
+	if p.User.Role != auth.RoleUnassignedOperator || p.User.CompanyID != nil {
 		return ConnectionCode{}, auth.ErrAccessDenied
 	}
 	now := s.now()
 	for attempts := 0; attempts < 10; attempts++ {
-		code, e := s.generate()
-		if e != nil {
-			return ConnectionCode{}, e
+		value, err := s.generate()
+		if err != nil {
+			return ConnectionCode{}, err
 		}
-		var row models.OperatorConnectionCode
-		e = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-			var user models.User
-			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&user, "id=?", p.User.ID).Error; err != nil {
+		var result ConnectionCode
+		err = s.repo.WithinTransaction(ctx, func(repo Repository) error {
+			user, err := repo.LockUser(ctx, p.User.ID)
+			if err != nil {
 				return err
 			}
-			if user.CompanyID != nil || user.Role != models.UserRoleUnassignedOperator {
+			if user.CompanyID != nil || user.Role != auth.RoleUnassignedOperator {
 				return auth.ErrAccessDenied
 			}
-			err := tx.Where("operator_id = ? AND is_used = false AND expires_at > ?", p.User.ID, now).Order("created_at DESC").First(&row).Error
+			result, err = repo.ActiveCode(ctx, user.ID, now)
 			if err == nil {
 				return nil
 			}
-			if !errors.Is(err, gorm.ErrRecordNotFound) {
+			if !errors.Is(err, errRepositoryNotFound) {
 				return err
 			}
-			row = models.OperatorConnectionCode{ID: uuid.New(), OperatorID: p.User.ID, Code: code, ExpiresAt: codeExpiry(now), CreatedAt: now}
-			return tx.Create(&row).Error
+			result = ConnectionCode{ID: uuid.New(), OperatorID: user.ID, Code: value, ExpiresAt: codeExpiry(now), CreatedAt: now}
+			return repo.CreateCode(ctx, result)
 		})
-		if e == nil {
-			return mapCode(row), nil
+		if err == nil {
+			s.logger.Info("connection code issued", "request_id", requestctx.RequestID(ctx), "operator_id", p.User.ID, "reused", result.Code != value)
+			return result, nil
 		}
-		if !isUnique(e) {
-			return ConnectionCode{}, e
+		if !errors.Is(err, errRepositoryConflict) {
+			return ConnectionCode{}, err
 		}
 	}
 	return ConnectionCode{}, errors.New("connection code collision limit")
 }
-func mapCode(r models.OperatorConnectionCode) ConnectionCode {
-	return ConnectionCode{r.ID, r.OperatorID, r.Code, r.ExpiresAt, r.IsUsed}
-}
-
-func (s *Service) CreateInvitation(ctx context.Context, p auth.Principal, code string, role models.InvitationRole) (Invitation, bool, error) {
-	if p.User.Role != models.UserRoleAdmin || p.User.CompanyID == nil {
+func (s *Service) CreateInvitation(ctx context.Context, p auth.Principal, code string, role InvitationRole) (Invitation, bool, error) {
+	if p.User.Role != auth.RoleAdmin || p.User.CompanyID == nil {
 		return Invitation{}, false, auth.ErrAccessDenied
 	}
-	if role != models.InvitationRoleOperatorL1 && role != models.InvitationRoleOperatorL2 {
+	if role != InvitationRoleL1 && role != InvitationRoleL2 {
 		return Invitation{}, false, auth.ErrValidation
 	}
 	code = strings.TrimSpace(code)
 	now := s.now()
 	var out Invitation
-	created := false
-	invalidCode := false
+	created, invalid := false, false
 	var operatorID uuid.UUID
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var attempt models.ConnectionCodeAttempt
-		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&attempt, "admin_id = ?", p.User.ID).Error
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	err := s.repo.WithinTransaction(ctx, func(repo Repository) error {
+		attempt, err := repo.AttemptForUpdate(ctx, p.User.ID)
+		if err != nil && !errors.Is(err, errRepositoryNotFound) {
 			return err
 		}
 		if err == nil && attempt.LockedUntil != nil && now.Before(*attempt.LockedUntil) {
 			return auth.ErrTooManyAttempts
 		}
-		var cc models.OperatorConnectionCode
-		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("code = ? AND is_used = false AND expires_at > ?", code, now).First(&cc).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if e := recordCodeFailure(tx, p.User.ID, attempt, now, s.cfg); e != nil {
+		cc, err := repo.ActiveCodeByValue(ctx, code, now)
+		if errors.Is(err, errRepositoryNotFound) {
+			recordCodeFailure(&attempt, p.User.ID, now, s.cfg)
+			if e := repo.SaveAttempt(ctx, attempt); e != nil {
 				return e
 			}
-			invalidCode = true
+			invalid = true
 			return nil
 		}
 		if err != nil {
 			return err
 		}
-		var operator models.User
-		if err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&operator, "id = ?", cc.OperatorID).Error; err != nil {
+		operator, err := repo.LockUser(ctx, cc.OperatorID)
+		if err != nil {
 			return err
 		}
-		if operator.CompanyID != nil || operator.Role != models.UserRoleUnassignedOperator {
+		if operator.CompanyID != nil || operator.Role != auth.RoleUnassignedOperator {
 			return auth.ErrOperatorAlreadyAssigned
 		}
 		operatorID = operator.ID
-		var existing models.CompanyInvitation
-		err = tx.Where("company_id = ? AND operator_id = ? AND status = 'pending'", *p.User.CompanyID, operator.ID).First(&existing).Error
+		existing, err := repo.PendingForCompanyOperator(ctx, *p.User.CompanyID, operator.ID)
 		if err == nil {
-			out, err = loadInvitation(tx, existing.ID)
+			out = existing
+			return nil
+		}
+		if !errors.Is(err, errRepositoryNotFound) {
 			return err
 		}
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
+		out = Invitation{ID: uuid.New(), CompanyID: *p.User.CompanyID, OperatorID: operator.ID, RoleToAssign: role, Status: InvitationPending, CreatedAt: now}
+		if err := repo.CreateInvitation(ctx, out, p.User.ID, &cc.Code, now); err != nil {
 			return err
 		}
-		inv := models.CompanyInvitation{ID: uuid.New(), CompanyID: *p.User.CompanyID, OperatorID: operator.ID, InvitedByUserID: p.User.ID, RoleToAssign: role, Status: models.InvitationPending, ConnectionCodeUsed: &cc.Code, CreatedAt: now, UpdatedAt: now}
-		if err = tx.Create(&inv).Error; err != nil {
+		if err := repo.DeleteAttempt(ctx, p.User.ID); err != nil {
 			return err
 		}
-		_ = tx.Delete(&models.ConnectionCodeAttempt{}, "admin_id = ?", p.User.ID).Error
-		if err = tx.Create(&models.AuditLog{CompanyID: p.User.CompanyID, UserID: &p.User.ID, ActionType: models.AuditInvitationSent, CreatedAt: now}).Error; err != nil {
+		if err := repo.CreateAudit(ctx, p.User.CompanyID, p.User.ID, AuditInvitationSent, now); err != nil {
 			return err
 		}
-		out, err = loadInvitation(tx, inv.ID)
+		out, err = repo.InvitationByID(ctx, out.ID)
 		created = true
 		return err
 	})
-	if err == nil && invalidCode {
+	if err == nil && invalid {
 		return Invitation{}, false, auth.ErrInvalidConnectionCode
 	}
-	if err != nil && isUnique(err) && operatorID != uuid.Nil {
-		var existing models.CompanyInvitation
-		if findErr := s.db.WithContext(ctx).Where("company_id=? AND operator_id=? AND status='pending'", *p.User.CompanyID, operatorID).First(&existing).Error; findErr == nil {
-			out, findErr = loadInvitation(s.db.WithContext(ctx), existing.ID)
-			return out, false, findErr
-		}
+	if errors.Is(err, errRepositoryConflict) && operatorID != uuid.Nil {
+		var existing Invitation
+		findErr := s.repo.WithinTransaction(ctx, func(repo Repository) error {
+			var loadErr error
+			existing, loadErr = repo.PendingForCompanyOperator(ctx, *p.User.CompanyID, operatorID)
+			return loadErr
+		})
+		return existing, false, findErr
+	}
+	if err == nil {
+		s.logger.Info("invitation prepared", "request_id", requestctx.RequestID(ctx), "invitation_id", out.ID, "company_id", out.CompanyID, "created", created)
 	}
 	return out, created, err
 }
-
-func recordCodeFailure(tx *gorm.DB, admin uuid.UUID, a models.ConnectionCodeAttempt, now time.Time, cfg Config) error {
+func recordCodeFailure(a *CodeAttempt, admin uuid.UUID, now time.Time, cfg Config) {
 	if a.AdminID == uuid.Nil || now.Sub(a.WindowStartedAt) >= cfg.Window {
-		a = models.ConnectionCodeAttempt{AdminID: admin, WindowStartedAt: now, FailureCount: 1}
+		*a = CodeAttempt{AdminID: admin, WindowStartedAt: now, FailureCount: 1}
 	} else {
 		a.FailureCount++
 	}
 	if a.FailureCount >= cfg.MaxFailures {
-		v := now.Add(cfg.Lock)
-		a.LockedUntil = &v
+		locked := now.Add(cfg.Lock)
+		a.LockedUntil = &locked
 	}
-	return tx.Save(&a).Error
 }
-
 func (s *Service) Pending(ctx context.Context, p auth.Principal) ([]Invitation, error) {
-	if p.User.Role != models.UserRoleUnassignedOperator || p.User.CompanyID != nil {
+	if p.User.Role != auth.RoleUnassignedOperator || p.User.CompanyID != nil {
 		return nil, auth.ErrAccessDenied
 	}
 	now := s.now()
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		return tx.Model(&models.CompanyInvitation{}).Where("operator_id = ? AND status = 'pending' AND connection_code_used IN (SELECT code FROM operator_connection_codes WHERE expires_at <= ? OR is_used = true)", p.User.ID, now).Updates(map[string]any{"status": models.InvitationExpired, "updated_at": now, "decided_at": now}).Error
+	var invitations []Invitation
+	err := s.repo.WithinTransaction(ctx, func(repo Repository) error {
+		if err := repo.ExpireInvalid(ctx, p.User.ID, now); err != nil {
+			return err
+		}
+		var loadErr error
+		invitations, loadErr = repo.PendingList(ctx, p.User.ID)
+		return loadErr
 	})
-	if err != nil {
-		return nil, err
-	}
-	var rows []struct {
-		models.CompanyInvitation
-		CompanyName string
-	}
-	if err = s.db.WithContext(ctx).Table("company_invitations").Select("company_invitations.*, companies.name company_name").Joins("JOIN companies ON companies.id=company_invitations.company_id").Where("operator_id=? AND status='pending'", p.User.ID).Order("company_invitations.created_at, company_invitations.id").Scan(&rows).Error; err != nil {
-		return nil, err
-	}
-	out := make([]Invitation, 0, len(rows))
-	for _, r := range rows {
-		out = append(out, mapInvitation(r.CompanyInvitation, r.CompanyName))
-	}
-	return out, nil
+	return invitations, err
 }
-
 func (s *Service) Accept(ctx context.Context, p auth.Principal, id uuid.UUID) (auth.User, error) {
-	if p.User.Role != models.UserRoleUnassignedOperator || p.User.CompanyID != nil {
+	if p.User.Role != auth.RoleUnassignedOperator || p.User.CompanyID != nil {
 		return auth.User{}, auth.ErrAccessDenied
 	}
 	now := s.now()
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var inv models.CompanyInvitation
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id=? AND operator_id=?", id, p.User.ID).First(&inv).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+	err := s.repo.WithinTransaction(ctx, func(repo Repository) error {
+		inv, codeValue, err := repo.InvitationForOwner(ctx, id, p.User.ID)
+		if errors.Is(err, errRepositoryNotFound) {
 			return auth.ErrInvitationNotFound
-		} else if err != nil {
+		}
+		if err != nil {
 			return err
 		}
-		if inv.Status != models.InvitationPending {
+		if inv.Status != InvitationPending || codeValue == nil {
 			return auth.ErrInvitationNotPending
 		}
-		if inv.ConnectionCodeUsed == nil {
-			return auth.ErrInvitationNotPending
-		}
-		var user models.User
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&user, "id=?", p.User.ID).Error; err != nil {
+		user, err := repo.LockUser(ctx, p.User.ID)
+		if err != nil {
 			return err
 		}
-		if user.CompanyID != nil || user.Role != models.UserRoleUnassignedOperator {
+		if user.CompanyID != nil || user.Role != auth.RoleUnassignedOperator {
 			return auth.ErrOperatorAlreadyAssigned
 		}
-		var cc models.OperatorConnectionCode
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&cc, "code=?", *inv.ConnectionCodeUsed).Error; err != nil {
+		cc, err := repo.CodeByValue(ctx, *codeValue)
+		if err != nil || cc.IsUsed || !now.Before(cc.ExpiresAt) {
 			return auth.ErrInvitationNotPending
 		}
-		if cc.IsUsed || !now.Before(cc.ExpiresAt) {
-			return auth.ErrInvitationNotPending
-		}
-		role := models.UserRole(inv.RoleToAssign)
-		if err := tx.Model(&user).Updates(map[string]any{"company_id": inv.CompanyID, "role": role, "updated_at": now}).Error; err != nil {
+		role := auth.Role(inv.RoleToAssign)
+		if err := repo.AssignOperator(ctx, user.ID, inv.CompanyID, role, now); err != nil {
 			return err
 		}
-		if err := tx.Model(&cc).Updates(map[string]any{"is_used": true, "used_at": now}).Error; err != nil {
+		if err := repo.MarkCodeUsed(ctx, cc.ID, now); err != nil {
 			return err
 		}
-		if err := tx.Model(&inv).Updates(map[string]any{"status": models.InvitationAccepted, "updated_at": now, "decided_at": now}).Error; err != nil {
+		if err := repo.SetInvitationStatus(ctx, inv.ID, InvitationAccepted, now); err != nil {
 			return err
 		}
-		if err := tx.Model(&models.CompanyInvitation{}).Where("operator_id=? AND id<>? AND status='pending'", user.ID, inv.ID).Updates(map[string]any{"status": models.InvitationExpired, "updated_at": now, "decided_at": now}).Error; err != nil {
+		if err := repo.ExpireOtherPending(ctx, user.ID, inv.ID, now); err != nil {
 			return err
 		}
-		return tx.Create(&models.AuditLog{CompanyID: &inv.CompanyID, UserID: &user.ID, ActionType: models.AuditInvitationAccepted, CreatedAt: now}).Error
+		return repo.CreateAudit(ctx, &inv.CompanyID, user.ID, AuditInvitationAccepted, now)
 	})
 	if err != nil {
 		return auth.User{}, err
 	}
-	return s.users.Me(ctx, p.User.ID)
+	user, err := s.users.Me(ctx, p.User.ID)
+	if err == nil {
+		s.logger.Info("invitation accepted", "request_id", requestctx.RequestID(ctx), "invitation_id", id, "user_id", p.User.ID)
+	}
+	return user, err
 }
-
 func (s *Service) Reject(ctx context.Context, p auth.Principal, id uuid.UUID) error {
 	now := s.now()
-	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var inv models.CompanyInvitation
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id=? AND operator_id=?", id, p.User.ID).First(&inv).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+	err := s.repo.WithinTransaction(ctx, func(repo Repository) error {
+		inv, _, err := repo.InvitationForOwner(ctx, id, p.User.ID)
+		if errors.Is(err, errRepositoryNotFound) {
 			return auth.ErrInvitationNotFound
-		} else if err != nil {
+		}
+		if err != nil {
 			return err
 		}
-		if inv.Status == models.InvitationRejected {
+		if inv.Status == InvitationRejected {
 			return nil
 		}
-		if inv.Status != models.InvitationPending {
+		if inv.Status != InvitationPending {
 			return auth.ErrInvitationNotPending
 		}
-		if err := tx.Model(&inv).Updates(map[string]any{"status": models.InvitationRejected, "updated_at": now, "decided_at": now}).Error; err != nil {
+		if err := repo.SetInvitationStatus(ctx, inv.ID, InvitationRejected, now); err != nil {
 			return err
 		}
-		return tx.Create(&models.AuditLog{CompanyID: &inv.CompanyID, UserID: &p.User.ID, ActionType: models.AuditInvitationRejected, CreatedAt: now}).Error
+		return repo.CreateAudit(ctx, &inv.CompanyID, p.User.ID, AuditInvitationRejected, now)
 	})
-}
-func loadInvitation(db *gorm.DB, id uuid.UUID) (Invitation, error) {
-	var r struct {
-		models.CompanyInvitation
-		CompanyName string
+	if err == nil {
+		s.logger.Info("invitation rejected", "request_id", requestctx.RequestID(ctx), "invitation_id", id, "user_id", p.User.ID)
 	}
-	e := db.Table("company_invitations").Select("company_invitations.*,companies.name company_name").Joins("JOIN companies ON companies.id=company_invitations.company_id").Where("company_invitations.id=?", id).Scan(&r).Error
-	return mapInvitation(r.CompanyInvitation, r.CompanyName), e
-}
-func mapInvitation(i models.CompanyInvitation, n string) Invitation {
-	return Invitation{i.ID, i.CompanyID, i.OperatorID, n, i.RoleToAssign, i.Status, i.CreatedAt}
-}
-func isUnique(err error) bool {
-	v := strings.ToLower(err.Error())
-	return strings.Contains(v, "duplicate key") || strings.Contains(v, "unique constraint")
+	return err
 }

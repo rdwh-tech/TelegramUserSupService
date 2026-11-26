@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net"
 	"net/http"
 
@@ -18,6 +18,7 @@ import (
 )
 
 func Run(ctx context.Context, cfg *config.Config) error {
+	logger := slog.Default()
 	db, err := database.Open(ctx, cfg.Db)
 	if err != nil {
 		return err
@@ -28,7 +29,7 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	}
 	defer func() {
 		if err := sqlDb.Close(); err != nil {
-			log.Printf("failed to close db: %v", err)
+			logger.Error("database close failed", "error", err)
 		}
 	}()
 	var authHandler *webtransport.Handler
@@ -67,13 +68,31 @@ func Run(ctx context.Context, cfg *config.Config) error {
 		if cfg.Auth.CodeLock > 0 {
 			authCfg.CodeLock = cfg.Auth.CodeLock
 		}
-		authService, initErr := auth.NewService(db.DB, authCfg)
+		authRepo, initErr := auth.NewPostgresRepository(db.DB, logger)
+		if initErr != nil {
+			return errors.New("initialize auth repository")
+		}
+		authService, initErr := auth.NewService(authRepo, authCfg, logger)
 		if initErr != nil {
 			return errors.New("initialize auth service: invalid configuration")
 		}
-		companyService := companies.NewService(db.DB, authService)
-		staffService := staff.NewService(db.DB, authService, staff.Config{Window: authCfg.CodeWindow, MaxFailures: authCfg.CodeMaxFailures, Lock: authCfg.CodeLock})
-		authHandler = webtransport.NewHandler(authService, companyService, staffService)
+		companyRepo, initErr := companies.NewPostgresRepository(db.DB, logger)
+		if initErr != nil {
+			return errors.New("initialize companies repository")
+		}
+		companyService, initErr := companies.NewService(companyRepo, authService, logger)
+		if initErr != nil {
+			return errors.New("initialize companies service")
+		}
+		staffRepo, initErr := staff.NewPostgresRepository(db.DB, logger)
+		if initErr != nil {
+			return errors.New("initialize staff repository")
+		}
+		staffService, initErr := staff.NewService(staffRepo, authService, staff.Config{Window: authCfg.CodeWindow, MaxFailures: authCfg.CodeMaxFailures, Lock: authCfg.CodeLock}, logger)
+		if initErr != nil {
+			return errors.New("initialize staff service")
+		}
+		authHandler = webtransport.NewHandler(authService, companyService, staffService, logger)
 	}
 
 	listener, err := net.Listen("tcp", cfg.Server.HTTPAddr)
@@ -83,7 +102,7 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	server := &http.Server{
 		Handler: NewRouterWithAuth(func(readyCtx context.Context) error {
 			return database.Ready(readyCtx, db)
-		}, cfg.Server.ReadinessTimeout, nil, authHandler),
+		}, cfg.Server.ReadinessTimeout, logger, authHandler),
 		ReadHeaderTimeout: cfg.Server.ReadHeaderTimeout,
 		IdleTimeout:       cfg.Server.IdleTimeout,
 	}

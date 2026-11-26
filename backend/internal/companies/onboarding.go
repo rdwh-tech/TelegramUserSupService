@@ -2,41 +2,45 @@ package companies
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 	"time"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/rdwh-tech/TelegramUserSupService/internal/auth"
-	"github.com/rdwh-tech/TelegramUserSupService/internal/platform/models"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
+	"github.com/rdwh-tech/TelegramUserSupService/internal/platform/requestctx"
 )
 
 type Company struct {
-	ID          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	Description *string   `json:"description"`
-	IsActive    bool      `json:"isActive"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID                   uuid.UUID
+	Name                 string
+	Description          *string
+	IsActive             bool
+	CreatedAt, UpdatedAt time.Time
 }
 type Result struct {
 	Company Company
 	User    auth.User
 }
 type Service struct {
-	db    *gorm.DB
-	users *auth.Service
-	now   func() time.Time
+	repo   Repository
+	users  UserReader
+	now    func() time.Time
+	logger *slog.Logger
 }
 
-func NewService(db *gorm.DB, users *auth.Service) *Service {
-	return &Service{db: db, users: users, now: func() time.Time { return time.Now().UTC() }}
+func NewService(repo Repository, users UserReader, logger *slog.Logger) (*Service, error) {
+	if repo == nil || users == nil {
+		return nil, auth.ErrValidation
+	}
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &Service{repo: repo, users: users, now: func() time.Time { return time.Now().UTC() }, logger: logger.With("layer", "service", "component", "companies")}, nil
 }
-
-func (s *Service) Create(ctx context.Context, principal auth.Principal, name string, description *string, timezone string) (Result, error) {
-	if principal.User.Role != models.UserRoleAdmin {
+func (s *Service) Create(ctx context.Context, p auth.Principal, name string, description *string, timezone string) (Result, error) {
+	if p.User.Role != auth.RoleAdmin {
 		return Result{}, auth.ErrAccessDenied
 	}
 	name = strings.TrimSpace(name)
@@ -58,49 +62,54 @@ func (s *Service) Create(ctx context.Context, principal auth.Principal, name str
 		}
 	}
 	now := s.now()
-	company := models.Company{ID: uuid.New(), Name: name, Description: description, IsActive: true, CreatedAt: now, UpdatedAt: now}
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var user models.User
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&user, "id = ?", principal.User.ID).Error; err != nil {
+	company := Company{ID: uuid.New(), Name: name, Description: description, IsActive: true, CreatedAt: now, UpdatedAt: now}
+	days := defaultSchedule(timezone)
+	policy := SLAPolicy{15, 120, 10, 5, 60, 5}
+	err := s.repo.WithinTransaction(ctx, func(repo Repository) error {
+		user, err := repo.LockUser(ctx, p.User.ID)
+		if err != nil {
 			return err
 		}
-		if user.Role != models.UserRoleAdmin {
+		if user.Role != auth.RoleAdmin {
 			return auth.ErrAccessDenied
 		}
 		if user.CompanyID != nil {
 			return auth.ErrCompanyAlreadyCreated
 		}
-		if err := tx.Create(&company).Error; err != nil {
+		if err := repo.CreateCompany(ctx, company); err != nil {
 			return err
 		}
-		if err := tx.Model(&user).Updates(map[string]any{"company_id": company.ID, "updated_at": now}).Error; err != nil {
+		if err := repo.AttachAdmin(ctx, user.ID, company.ID, now); err != nil {
 			return err
 		}
-		for day := 1; day <= 7; day++ {
-			working := day <= 5
-			var start, end *string
-			if working {
-				a, b := "09:00", "18:00"
-				start, end = &a, &b
-			}
-			schedule := models.CompanySchedule{ID: uuid.New(), CompanyID: company.ID, DayOfWeek: int16(day), IsWorkingDay: working, StartTime: start, EndTime: end, Timezone: timezone}
-			if err := tx.Create(&schedule).Error; err != nil {
-				return err
-			}
-		}
-		l1frt, l1ttr, l1art, l2frt, l2ttr, l2art := 15, 120, 10, 5, 60, 5
-		policy := models.CompanySLAPolicy{ID: uuid.New(), CompanyID: company.ID, Version: 1, FRTLimitMinutesL1: &l1frt, TTRLimitMinutesL1: &l1ttr, ARTLimitMinutesL1: &l1art, FRTLimitMinutesL2: &l2frt, TTRLimitMinutesL2: &l2ttr, ARTLimitMinutesL2: &l2art, IsActive: true}
-		if err := tx.Create(&policy).Error; err != nil {
+		if err := repo.CreateSchedule(ctx, company.ID, days); err != nil {
 			return err
 		}
-		return tx.Create(&models.AuditLog{CompanyID: &company.ID, UserID: &user.ID, ActionType: models.AuditCompanyCreated, CreatedAt: now}).Error
+		if err := repo.CreateSLAPolicy(ctx, company.ID, policy); err != nil {
+			return err
+		}
+		return repo.CreateCompanyAudit(ctx, company.ID, user.ID, now)
 	})
 	if err != nil {
 		return Result{}, err
 	}
-	user, err := s.users.Me(ctx, principal.User.ID)
+	user, err := s.users.Me(ctx, p.User.ID)
 	if err != nil {
 		return Result{}, err
 	}
-	return Result{Company: Company{company.ID, company.Name, company.Description, company.IsActive, company.CreatedAt, company.UpdatedAt}, User: user}, nil
+	s.logger.Info("company created", "request_id", requestctx.RequestID(ctx), "company_id", company.ID, "user_id", p.User.ID)
+	return Result{company, user}, nil
+}
+func defaultSchedule(timezone string) []ScheduleDay {
+	days := make([]ScheduleDay, 0, 7)
+	for day := 1; day <= 7; day++ {
+		working := day <= 5
+		var start, end *string
+		if working {
+			a, b := "09:00", "18:00"
+			start, end = &a, &b
+		}
+		days = append(days, ScheduleDay{int16(day), working, start, end, timezone})
+	}
+	return days
 }

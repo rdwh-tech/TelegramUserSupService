@@ -1,20 +1,14 @@
 package httpjson
 
-import "context"
+import (
+	"context"
 
-type requestIDKey struct{}
-type originalRequestIDValidKey struct{}
+	"github.com/rdwh-tech/TelegramUserSupService/internal/platform/requestctx"
+)
 
 func WithRequestID(ctx context.Context, requestID string, originalValid bool) context.Context {
-	ctx = context.WithValue(ctx, requestIDKey{}, requestID)
-	return context.WithValue(ctx, originalRequestIDValidKey{}, originalValid)
+	return requestctx.WithRequestID(ctx, requestID, originalValid)
 }
 
-func RequestID(ctx context.Context) string {
-	value, _ := ctx.Value(requestIDKey{}).(string)
-	return value
-}
-func OriginalRequestIDValid(ctx context.Context) bool {
-	value, _ := ctx.Value(originalRequestIDValidKey{}).(bool)
-	return value
-}
+func RequestID(ctx context.Context) string            { return requestctx.RequestID(ctx) }
+func OriginalRequestIDValid(ctx context.Context) bool { return requestctx.OriginalRequestIDValid(ctx) }

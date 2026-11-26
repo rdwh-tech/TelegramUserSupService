@@ -4,7 +4,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/rdwh-tech/TelegramUserSupService/internal/platform/models"
+)
+
+type Role string
+
+const (
+	RoleAdmin              Role = "admin"
+	RoleOperatorL1         Role = "operator_l1"
+	RoleOperatorL2         Role = "operator_l2"
+	RoleUnassignedOperator Role = "unassigned_operator"
 )
 
 type User struct {
@@ -13,10 +21,45 @@ type User struct {
 	CompanyName *string
 	Login       string
 	FullName    string
-	Role        models.UserRole
+	Role        Role
 	IsBlocked   bool
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+}
+
+type Account struct {
+	User
+	PasswordHash               string
+	FailedLoginCount           int
+	FailedLoginWindowStartedAt *time.Time
+	LoginLockedUntil           *time.Time
+}
+
+type Session struct {
+	ID               uuid.UUID
+	UserID           uuid.UUID
+	RefreshTokenHash string
+	ExpiresAt        time.Time
+	IsRevoked        bool
+	CreatedAt        time.Time
+	LastActivityAt   time.Time
+	RevokedAt        *time.Time
+}
+
+type AuditAction string
+
+const (
+	AuditUserRegistered AuditAction = "user_registered"
+	AuditLogin          AuditAction = "login"
+	AuditLogout         AuditAction = "logout"
+	AuditProfileUpdated AuditAction = "profile_updated"
+)
+
+type AuditEvent struct {
+	CompanyID *uuid.UUID
+	UserID    *uuid.UUID
+	Action    AuditAction
+	CreatedAt time.Time
 }
 
 type Principal struct {

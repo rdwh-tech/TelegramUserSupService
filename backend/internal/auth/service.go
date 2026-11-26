@@ -3,26 +3,26 @@ package auth
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"strings"
 	"time"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
-	"github.com/rdwh-tech/TelegramUserSupService/internal/platform/models"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
+	"github.com/rdwh-tech/TelegramUserSupService/internal/platform/requestctx"
 )
 
 type Service struct {
-	db        *gorm.DB
+	repo      Repository
 	cfg       Config
 	tokens    *TokenManager
 	now       func() time.Time
 	dummyHash string
+	logger    *slog.Logger
 }
 
-func NewService(db *gorm.DB, cfg Config) (*Service, error) {
-	if db == nil || cfg.RefreshTTL <= 0 || cfg.IdleTTL <= 0 || cfg.LoginWindow <= 0 || cfg.LoginMaxFailures <= 0 || cfg.LoginLock <= 0 || cfg.CodeWindow <= 0 || cfg.CodeMaxFailures <= 0 || cfg.CodeLock <= 0 {
+func NewService(repo Repository, cfg Config, logger *slog.Logger) (*Service, error) {
+	if repo == nil || cfg.RefreshTTL <= 0 || cfg.IdleTTL <= 0 || cfg.LoginWindow <= 0 || cfg.LoginMaxFailures <= 0 || cfg.LoginLock <= 0 || cfg.CodeWindow <= 0 || cfg.CodeMaxFailures <= 0 || cfg.CodeLock <= 0 {
 		return nil, ErrValidation
 	}
 	tokens, err := NewTokenManager(cfg.Secret, cfg.Issuer, cfg.Audience, cfg.AccessTTL)
@@ -33,26 +33,29 @@ func NewService(db *gorm.DB, cfg Config) (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Service{db: db, cfg: cfg, tokens: tokens, now: func() time.Time { return time.Now().UTC() }, dummyHash: dummy}, nil
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &Service{repo: repo, cfg: cfg, tokens: tokens, now: func() time.Time { return time.Now().UTC() }, dummyHash: dummy, logger: logger.With("layer", "service", "component", "auth")}, nil
 }
-
 func (s *Service) SetClock(clock func() time.Time) {
 	if clock != nil {
 		s.now = clock
 	}
 }
-
+func (s *Service) log(ctx context.Context) *slog.Logger {
+	return s.logger.With("request_id", requestctx.RequestID(ctx))
+}
 func normalizeLogin(login string) string { return strings.ToLower(strings.TrimSpace(login)) }
-
-func validateRegistration(login, password, fullName, role string) (models.UserRole, error) {
+func validateRegistration(login, password, fullName, role string) (Role, error) {
 	if utf8.RuneCountInString(login) < 3 || utf8.RuneCountInString(login) > 100 || strings.TrimSpace(fullName) == "" || utf8.RuneCountInString(strings.TrimSpace(fullName)) > 255 || ValidatePassword(password) != nil {
 		return "", ErrValidation
 	}
 	switch role {
 	case "admin":
-		return models.UserRoleAdmin, nil
+		return RoleAdmin, nil
 	case "operator":
-		return models.UserRoleUnassignedOperator, nil
+		return RoleUnassignedOperator, nil
 	default:
 		return "", ErrValidation
 	}
@@ -74,28 +77,29 @@ func (s *Service) Register(ctx context.Context, login, password, fullName, role 
 		return AuthResult{}, err
 	}
 	now := s.now()
-	user := models.User{ID: uuid.New(), Login: login, PasswordHash: hash, FullName: fullName, Role: dbRole, CreatedAt: now, UpdatedAt: now}
-	session := models.UserSession{ID: uuid.New(), UserID: user.ID, RefreshTokenHash: refreshHash, ExpiresAt: now.Add(s.cfg.RefreshTTL), CreatedAt: now, LastActivityAt: now}
-	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(&user).Error; err != nil {
-			if isUnique(err) {
+	account := Account{User: User{ID: uuid.New(), Login: login, FullName: fullName, Role: dbRole, CreatedAt: now, UpdatedAt: now}, PasswordHash: hash}
+	session := Session{ID: uuid.New(), UserID: account.ID, RefreshTokenHash: refreshHash, ExpiresAt: now.Add(s.cfg.RefreshTTL), CreatedAt: now, LastActivityAt: now}
+	err = s.repo.WithinTransaction(ctx, func(repo Repository) error {
+		if err := repo.CreateAccount(ctx, account); err != nil {
+			if errors.Is(err, errRepositoryConflict) {
 				return ErrLoginExists
 			}
 			return err
 		}
-		if err := tx.Create(&session).Error; err != nil {
+		if err := repo.CreateSession(ctx, session); err != nil {
 			return err
 		}
-		return tx.Create(&models.AuditLog{UserID: &user.ID, ActionType: models.AuditUserRegistered, CreatedAt: now}).Error
+		return repo.CreateAudit(ctx, AuditEvent{UserID: &account.ID, Action: AuditUserRegistered, CreatedAt: now})
 	})
 	if err != nil {
 		return AuthResult{}, err
 	}
-	access, err := s.tokens.Sign(user.ID, session.ID, now, session.ExpiresAt)
+	access, err := s.tokens.Sign(account.ID, session.ID, now, session.ExpiresAt)
 	if err != nil {
 		return AuthResult{}, err
 	}
-	return AuthResult{AccessToken: access, RefreshToken: refresh, User: mapUser(user, nil)}, nil
+	s.log(ctx).Info("user registered", "user_id", account.ID, "role", account.Role)
+	return AuthResult{AccessToken: access, RefreshToken: refresh, User: account.User}, nil
 }
 
 func (s *Service) Login(ctx context.Context, login, password string) (AuthResult, error) {
@@ -103,10 +107,9 @@ func (s *Service) Login(ctx context.Context, login, password string) (AuthResult
 	now := s.now()
 	var result AuthResult
 	invalid := false
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var user models.User
-		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("lower(btrim(login)) = ?", login).First(&user).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+	err := s.repo.WithinTransaction(ctx, func(repo Repository) error {
+		account, err := repo.AccountForLogin(ctx, login)
+		if errors.Is(err, errRepositoryNotFound) {
 			_ = VerifyPassword(s.dummyHash, password)
 			invalid = true
 			return nil
@@ -114,40 +117,40 @@ func (s *Service) Login(ctx context.Context, login, password string) (AuthResult
 		if err != nil {
 			return err
 		}
-		passwordOK := VerifyPassword(user.PasswordHash, password)
-		locked := user.LoginLockedUntil != nil && now.Before(*user.LoginLockedUntil)
-		if user.IsBlocked || locked || !passwordOK {
-			if !user.IsBlocked && !locked {
-				recordLoginFailure(&user, now, s.cfg)
-				if err := tx.Save(&user).Error; err != nil {
+		passwordOK := VerifyPassword(account.PasswordHash, password)
+		locked := account.LoginLockedUntil != nil && now.Before(*account.LoginLockedUntil)
+		if account.IsBlocked || locked || !passwordOK {
+			if !account.IsBlocked && !locked {
+				recordLoginFailure(&account, now, s.cfg)
+				if err := repo.SaveLoginState(ctx, account); err != nil {
 					return err
 				}
 			}
 			invalid = true
 			return nil
 		}
-		user.FailedLoginCount = 0
-		user.FailedLoginWindowStartedAt = nil
-		user.LoginLockedUntil = nil
-		if err := tx.Save(&user).Error; err != nil {
+		account.FailedLoginCount = 0
+		account.FailedLoginWindowStartedAt = nil
+		account.LoginLockedUntil = nil
+		if err := repo.SaveLoginState(ctx, account); err != nil {
 			return err
 		}
 		refresh, refreshHash, err := NewRefreshToken()
 		if err != nil {
 			return err
 		}
-		session := models.UserSession{ID: uuid.New(), UserID: user.ID, RefreshTokenHash: refreshHash, ExpiresAt: now.Add(s.cfg.RefreshTTL), CreatedAt: now, LastActivityAt: now}
-		if err := tx.Create(&session).Error; err != nil {
+		session := Session{ID: uuid.New(), UserID: account.ID, RefreshTokenHash: refreshHash, ExpiresAt: now.Add(s.cfg.RefreshTTL), CreatedAt: now, LastActivityAt: now}
+		if err := repo.CreateSession(ctx, session); err != nil {
 			return err
 		}
-		if err := tx.Create(&models.AuditLog{CompanyID: user.CompanyID, UserID: &user.ID, ActionType: models.AuditLogin, CreatedAt: now}).Error; err != nil {
+		if err := repo.CreateAudit(ctx, AuditEvent{CompanyID: account.CompanyID, UserID: &account.ID, Action: AuditLogin, CreatedAt: now}); err != nil {
 			return err
 		}
-		access, err := s.tokens.Sign(user.ID, session.ID, now, session.ExpiresAt)
+		access, err := s.tokens.Sign(account.ID, session.ID, now, session.ExpiresAt)
 		if err != nil {
 			return err
 		}
-		view, err := loadUser(tx, user.ID)
+		view, err := repo.UserByID(ctx, account.ID)
 		if err != nil {
 			return err
 		}
@@ -155,12 +158,16 @@ func (s *Service) Login(ctx context.Context, login, password string) (AuthResult
 		return nil
 	})
 	if err == nil && invalid {
+		s.log(ctx).Warn("login rejected", "login_present", login != "")
 		return AuthResult{}, ErrInvalidCredentials
+	}
+	if err == nil {
+		s.log(ctx).Info("login succeeded", "user_id", result.User.ID)
 	}
 	return result, err
 }
 
-func recordLoginFailure(user *models.User, now time.Time, cfg Config) {
+func recordLoginFailure(user *Account, now time.Time, cfg Config) {
 	if user.FailedLoginWindowStartedAt == nil || now.Sub(*user.FailedLoginWindowStartedAt) >= cfg.LoginWindow {
 		user.FailedLoginWindowStartedAt = &now
 		user.FailedLoginCount = 1
@@ -172,7 +179,6 @@ func recordLoginFailure(user *models.User, now time.Time, cfg Config) {
 		user.LoginLockedUntil = &locked
 	}
 }
-
 func (s *Service) Authenticate(ctx context.Context, authorization string, publicActivity bool) (Principal, error) {
 	token, err := bearer(authorization)
 	if err != nil {
@@ -185,82 +191,97 @@ func (s *Service) Authenticate(ctx context.Context, authorization string, public
 	userID, _ := uuid.Parse(claims.Subject)
 	sessionID, _ := uuid.Parse(claims.SessionID)
 	now := s.now()
-	var session models.UserSession
-	if err := s.db.WithContext(ctx).Where("id = ? AND user_id = ?", sessionID, userID).First(&session).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return Principal{}, ErrUnauthorized
-		}
+	var session Session
+	err = s.repo.WithinTransaction(ctx, func(repo Repository) error {
+		var loadErr error
+		session, loadErr = repo.SessionByID(ctx, sessionID, userID, false)
+		return loadErr
+	})
+	if errors.Is(err, errRepositoryNotFound) {
+		return Principal{}, ErrUnauthorized
+	}
+	if err != nil {
 		return Principal{}, err
 	}
 	if session.IsRevoked || session.RevokedAt != nil || !now.Before(session.ExpiresAt) || !now.Before(session.LastActivityAt.Add(s.cfg.IdleTTL)) {
 		return Principal{}, ErrUnauthorized
 	}
-	user, err := loadUser(s.db.WithContext(ctx), userID)
+	var user User
+	err = s.repo.WithinTransaction(ctx, func(repo Repository) error {
+		var loadErr error
+		user, loadErr = repo.UserByID(ctx, userID)
+		return loadErr
+	})
+	if errors.Is(err, errRepositoryNotFound) {
+		return Principal{}, ErrUnauthorized
+	}
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return Principal{}, ErrUnauthorized
-		}
 		return Principal{}, err
 	}
 	if user.IsBlocked || !validCurrentRole(user.Role) {
 		return Principal{}, ErrUnauthorized
 	}
-	_ = publicActivity // Activity is recorded by the transport only after a successful response.
+	_ = publicActivity
 	return Principal{User: user, SessionID: session.ID, AccessExpiresAt: time.Unix(claims.ExpiresAt, 0).UTC(), SessionExpiresAt: session.ExpiresAt, LastActivityAt: session.LastActivityAt}, nil
 }
-
 func (s *Service) TouchActivity(ctx context.Context, p Principal) error {
 	now := s.now()
 	if now.Sub(p.LastActivityAt) < time.Minute {
 		return nil
 	}
-	return s.db.WithContext(ctx).Model(&models.UserSession{}).Where("id=? AND user_id=? AND is_revoked=false AND last_activity_at < ?", p.SessionID, p.User.ID, now.Add(-time.Minute)).Update("last_activity_at", now).Error
+	return s.repo.WithinTransaction(ctx, func(repo Repository) error {
+		return repo.TouchSession(ctx, p.SessionID, p.User.ID, now, now.Add(-time.Minute))
+	})
 }
-
-func validCurrentRole(role models.UserRole) bool {
-	return role == models.UserRoleAdmin || role == models.UserRoleOperatorL1 || role == models.UserRoleOperatorL2 || role == models.UserRoleUnassignedOperator
+func validCurrentRole(role Role) bool {
+	return role == RoleAdmin || role == RoleOperatorL1 || role == RoleOperatorL2 || role == RoleUnassignedOperator
 }
-
 func (s *Service) Refresh(ctx context.Context, refresh string) (string, error) {
 	if refresh == "" {
 		return "", ErrUnauthorized
 	}
 	now := s.now()
-	var session models.UserSession
-	if err := s.db.WithContext(ctx).Where("refresh_token_hash = ?", HashRefreshToken(refresh)).First(&session).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return "", ErrUnauthorized
-		}
+	var session Session
+	err := s.repo.WithinTransaction(ctx, func(repo Repository) error {
+		var loadErr error
+		session, loadErr = repo.SessionByRefreshHash(ctx, HashRefreshToken(refresh))
+		return loadErr
+	})
+	if errors.Is(err, errRepositoryNotFound) {
+		return "", ErrUnauthorized
+	}
+	if err != nil {
 		return "", err
 	}
 	if session.IsRevoked || session.RevokedAt != nil || !now.Before(session.ExpiresAt) || !now.Before(session.LastActivityAt.Add(s.cfg.IdleTTL)) {
 		return "", ErrUnauthorized
 	}
-	user, err := loadUser(s.db.WithContext(ctx), session.UserID)
-	if err != nil || user.IsBlocked || !validCurrentRole(user.Role) {
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			return "", err
-		}
+	var user User
+	err = s.repo.WithinTransaction(ctx, func(repo Repository) error {
+		var loadErr error
+		user, loadErr = repo.UserByID(ctx, session.UserID)
+		return loadErr
+	})
+	if errors.Is(err, errRepositoryNotFound) {
 		return "", ErrUnauthorized
 	}
-	if err := s.db.WithContext(ctx).Model(&models.UserSession{}).Where("id = ? AND is_revoked = false", session.ID).Update("last_activity_at", now).Error; err != nil {
+	if err != nil {
 		return "", err
 	}
-	return s.tokens.Sign(user.ID, session.ID, now, session.ExpiresAt)
+	if user.IsBlocked || !validCurrentRole(user.Role) {
+		return "", ErrUnauthorized
+	}
+	if err := s.repo.WithinTransaction(ctx, func(repo Repository) error {
+		return repo.TouchSession(ctx, session.ID, user.ID, now, now.Add(time.Nanosecond))
+	}); err != nil {
+		return "", err
+	}
+	token, err := s.tokens.Sign(user.ID, session.ID, now, session.ExpiresAt)
+	if err == nil {
+		s.log(ctx).Info("session refreshed", "user_id", user.ID, "session_id", session.ID)
+	}
+	return token, err
 }
-
-func (s *Service) Logout(ctx context.Context, principal Principal) error {
-	now := s.now()
-	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&models.UserSession{}).Where("id = ?", principal.SessionID).Updates(map[string]any{"is_revoked": true, "revoked_at": now}).Error; err != nil {
-			return err
-		}
-		return tx.Create(&models.AuditLog{CompanyID: principal.User.CompanyID, UserID: &principal.User.ID, ActionType: models.AuditLogout, CreatedAt: now}).Error
-	})
-}
-
-// LogoutAuthorization is intentionally idempotent: an otherwise valid access
-// token may revoke its session again, while no other session is affected.
 func (s *Service) LogoutAuthorization(ctx context.Context, authorization string) error {
 	token, err := bearer(authorization)
 	if err != nil {
@@ -273,28 +294,31 @@ func (s *Service) LogoutAuthorization(ctx context.Context, authorization string)
 	userID, _ := uuid.Parse(claims.Subject)
 	sessionID, _ := uuid.Parse(claims.SessionID)
 	now := s.now()
-	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var session models.UserSession
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id=? AND user_id=?", sessionID, userID).First(&session).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return ErrUnauthorized
-			}
+	err = s.repo.WithinTransaction(ctx, func(repo Repository) error {
+		session, err := repo.SessionByID(ctx, sessionID, userID, true)
+		if errors.Is(err, errRepositoryNotFound) {
+			return ErrUnauthorized
+		}
+		if err != nil {
 			return err
 		}
 		if session.IsRevoked {
 			return nil
 		}
-		var user models.User
-		if err := tx.First(&user, "id=?", userID).Error; err != nil {
+		user, err := repo.UserByID(ctx, userID)
+		if err != nil {
 			return ErrUnauthorized
 		}
-		if err := tx.Model(&session).Updates(map[string]any{"is_revoked": true, "revoked_at": now}).Error; err != nil {
+		if err := repo.RevokeSession(ctx, session.ID, now); err != nil {
 			return err
 		}
-		return tx.Create(&models.AuditLog{CompanyID: user.CompanyID, UserID: &user.ID, ActionType: models.AuditLogout, CreatedAt: now}).Error
+		return repo.CreateAudit(ctx, AuditEvent{CompanyID: user.CompanyID, UserID: &user.ID, Action: AuditLogout, CreatedAt: now})
 	})
+	if err == nil {
+		s.log(ctx).Info("session logged out", "user_id", userID, "session_id", sessionID)
+	}
+	return err
 }
-
 func (s *Service) EffectiveExpiry(p Principal) time.Time {
 	expires := p.AccessExpiresAt
 	if p.SessionExpiresAt.Before(expires) {
@@ -306,48 +330,33 @@ func (s *Service) EffectiveExpiry(p Principal) time.Time {
 	}
 	return expires
 }
-
 func (s *Service) Me(ctx context.Context, userID uuid.UUID) (User, error) {
-	return loadUser(s.db.WithContext(ctx), userID)
+	var user User
+	err := s.repo.WithinTransaction(ctx, func(repo Repository) error {
+		var loadErr error
+		user, loadErr = repo.UserByID(ctx, userID)
+		return loadErr
+	})
+	return user, err
 }
-
-func (s *Service) UpdateProfile(ctx context.Context, principal Principal, fullName string) (User, error) {
+func (s *Service) UpdateProfile(ctx context.Context, p Principal, fullName string) (User, error) {
 	fullName = strings.TrimSpace(fullName)
 	if fullName == "" || utf8.RuneCountInString(fullName) > 255 {
 		return User{}, ErrValidation
 	}
 	now := s.now()
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&models.User{}).Where("id = ?", principal.User.ID).Updates(map[string]any{"full_name": fullName, "updated_at": now}).Error; err != nil {
+	err := s.repo.WithinTransaction(ctx, func(repo Repository) error {
+		if err := repo.UpdateFullName(ctx, p.User.ID, fullName, now); err != nil {
 			return err
 		}
-		return tx.Create(&models.AuditLog{CompanyID: principal.User.CompanyID, UserID: &principal.User.ID, ActionType: models.AuditProfileUpdated, CreatedAt: now}).Error
+		return repo.CreateAudit(ctx, AuditEvent{CompanyID: p.User.CompanyID, UserID: &p.User.ID, Action: AuditProfileUpdated, CreatedAt: now})
 	})
 	if err != nil {
 		return User{}, err
 	}
-	return loadUser(s.db.WithContext(ctx), principal.User.ID)
-}
-
-func loadUser(db *gorm.DB, id uuid.UUID) (User, error) {
-	var row struct {
-		models.User
-		CompanyName *string
+	user, err := s.Me(ctx, p.User.ID)
+	if err == nil {
+		s.log(ctx).Info("profile updated", "user_id", p.User.ID)
 	}
-	err := db.Table("users").Select("users.*, companies.name AS company_name").Joins("LEFT JOIN companies ON companies.id = users.company_id").Where("users.id = ?", id).Scan(&row).Error
-	if err != nil {
-		return User{}, err
-	}
-	if row.ID == uuid.Nil {
-		return User{}, gorm.ErrRecordNotFound
-	}
-	return mapUser(row.User, row.CompanyName), nil
-}
-
-func mapUser(user models.User, companyName *string) User {
-	return User{ID: user.ID, CompanyID: user.CompanyID, CompanyName: companyName, Login: user.Login, FullName: user.FullName, Role: user.Role, IsBlocked: user.IsBlocked, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt}
-}
-func isUnique(err error) bool {
-	text := strings.ToLower(err.Error())
-	return strings.Contains(text, "duplicate key") || strings.Contains(text, "unique constraint")
+	return user, err
 }

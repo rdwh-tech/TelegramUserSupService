@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -13,31 +14,56 @@ import (
 	"github.com/google/uuid"
 	"github.com/rdwh-tech/TelegramUserSupService/internal/auth"
 	"github.com/rdwh-tech/TelegramUserSupService/internal/companies"
-	"github.com/rdwh-tech/TelegramUserSupService/internal/platform/models"
+	"github.com/rdwh-tech/TelegramUserSupService/internal/platform/requestctx"
 	"github.com/rdwh-tech/TelegramUserSupService/internal/staff"
 	"github.com/rdwh-tech/TelegramUserSupService/internal/transport/httpjson"
 )
 
+type AuthService interface {
+	Register(context.Context, string, string, string, string) (auth.AuthResult, error)
+	Login(context.Context, string, string) (auth.AuthResult, error)
+	Refresh(context.Context, string) (string, error)
+	LogoutAuthorization(context.Context, string) error
+	Authenticate(context.Context, string, bool) (auth.Principal, error)
+	TouchActivity(context.Context, auth.Principal) error
+	Me(context.Context, uuid.UUID) (auth.User, error)
+	UpdateProfile(context.Context, auth.Principal, string) (auth.User, error)
+	EffectiveExpiry(auth.Principal) time.Time
+}
+type CompanyService interface {
+	Create(context.Context, auth.Principal, string, *string, string) (companies.Result, error)
+}
+type StaffService interface {
+	ConnectionCode(context.Context, auth.Principal) (staff.ConnectionCode, error)
+	CreateInvitation(context.Context, auth.Principal, string, staff.InvitationRole) (staff.Invitation, bool, error)
+	Pending(context.Context, auth.Principal) ([]staff.Invitation, error)
+	Accept(context.Context, auth.Principal, uuid.UUID) (auth.User, error)
+	Reject(context.Context, auth.Principal, uuid.UUID) error
+}
 type Handler struct {
-	auth      *auth.Service
-	companies *companies.Service
-	staff     *staff.Service
+	auth      AuthService
+	companies CompanyService
+	staff     StaffService
+	logger    *slog.Logger
 }
 
-func NewHandler(a *auth.Service, c *companies.Service, s *staff.Service) *Handler {
-	return &Handler{a, c, s}
+func NewHandler(a AuthService, c CompanyService, s StaffService, logger *slog.Logger) *Handler {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &Handler{a, c, s, logger.With("layer", "handler", "component", "auth")}
 }
 
 type userResponse struct {
-	ID          uuid.UUID       `json:"id"`
-	CompanyID   *uuid.UUID      `json:"companyId"`
-	CompanyName *string         `json:"companyName,omitempty"`
-	Login       string          `json:"login"`
-	FullName    string          `json:"fullName"`
-	Role        models.UserRole `json:"role"`
-	IsBlocked   bool            `json:"isBlocked"`
-	CreatedAt   time.Time       `json:"createdAt"`
-	UpdatedAt   time.Time       `json:"updatedAt"`
+	ID          uuid.UUID  `json:"id"`
+	CompanyID   *uuid.UUID `json:"companyId"`
+	CompanyName *string    `json:"companyName,omitempty"`
+	Login       string     `json:"login"`
+	FullName    string     `json:"fullName"`
+	Role        auth.Role  `json:"role"`
+	IsBlocked   bool       `json:"isBlocked"`
+	CreatedAt   time.Time  `json:"createdAt"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
 }
 
 func userDTO(u auth.User) userResponse {
@@ -81,7 +107,9 @@ func (h *Handler) requireAuth(next http.Handler) http.Handler {
 		wrapped := chimiddleware.NewWrapResponseWriter(w, r.ProtoMajor)
 		next.ServeHTTP(wrapped, r.WithContext(context.WithValue(r.Context(), principalKey{}, p)))
 		if wrapped.Status() >= 200 && wrapped.Status() < 300 {
-			_ = h.auth.TouchActivity(r.Context(), p)
+			if err := h.auth.TouchActivity(r.Context(), p); err != nil {
+				h.logger.Error("session activity update failed", "request_id", requestctx.RequestID(r.Context()), "error", err)
+			}
 		}
 	})
 }
@@ -190,7 +218,10 @@ func (h *Handler) createCompany(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, err)
 		return
 	}
-	httpjson.Write(w, http.StatusCreated, map[string]any{"company": out.Company, "user": userDTO(out.User)})
+	httpjson.Write(w, http.StatusCreated, map[string]any{"company": companyDTO(out.Company), "user": userDTO(out.User)})
+}
+func companyDTO(c companies.Company) map[string]any {
+	return map[string]any{"id": c.ID, "name": c.Name, "description": c.Description, "isActive": c.IsActive, "createdAt": c.CreatedAt, "updatedAt": c.UpdatedAt}
 }
 func (h *Handler) connectionCode(w http.ResponseWriter, r *http.Request) {
 	v, err := h.staff.ConnectionCode(r.Context(), principal(r))
@@ -205,8 +236,8 @@ func invitationDTO(v staff.Invitation) map[string]any {
 }
 func (h *Handler) createInvitation(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		ConnectionCode string                `json:"connectionCode"`
-		RoleToAssign   models.InvitationRole `json:"roleToAssign"`
+		ConnectionCode string               `json:"connectionCode"`
+		RoleToAssign   staff.InvitationRole `json:"roleToAssign"`
 	}
 	if err := decode(r, &in); err != nil {
 		writeError(w, r, err)
