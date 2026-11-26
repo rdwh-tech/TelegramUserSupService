@@ -53,7 +53,7 @@ func TestRunMigrationCreatesCurrentSchema(t *testing.T) {
 	if err := admin.Raw("SELECT count(*) FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'", schema).Scan(&tableCount).Error; err != nil {
 		t.Fatal(err)
 	}
-	if tableCount != 24 {
-		t.Fatalf("got %d migrated tables, want 24", tableCount)
+	if tableCount != 25 {
+		t.Fatalf("got %d migrated tables, want 25", tableCount)
 	}
 }

@@ -18,7 +18,6 @@ var authSQL string
 
 const (
 	baselineVersion = 1
-	currentVersion  = 3
 )
 
 // Apply records the adopted API-01 baseline and applies every later migration
