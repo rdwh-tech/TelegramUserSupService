@@ -10,7 +10,7 @@ import logging
 import mimetypes
 import uuid
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import quote, urlsplit
 
 from .. import texts
@@ -162,7 +162,7 @@ class StubApiClient(ApiClient):
         self._tickets[ticket_id] = {"user": telegram_user_id, "status": "new", "ticket_number": self._counter}
         result = {"ticket_id": ticket_id, "ticket_number": self._counter,
                   "status": "new", "escalation_level": "l1",
-                  "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")}
+                  "created_at": datetime.now(UTC).isoformat().replace("+00:00", "Z")}
         if idempotency_key:
             self._idempotency[idempotency_key] = result.copy()
         return result
@@ -184,7 +184,7 @@ class StubApiClient(ApiClient):
             ticket["status"] = "in_progress"
         result = {"message_id": str(uuid.uuid4()), "ticket_id": ticket_id,
                   "ticket_status": ticket["status"], "duplicate": False,
-                  "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")}
+                  "created_at": datetime.now(UTC).isoformat().replace("+00:00", "Z")}
         self.sent_messages.append({"ticket_id": ticket_id, "message_type": message_type, "content": content or caption,
                                    "file_id": file_id, "file_name": file_name, "caption": caption,
                                    "mime_type": mime_type, "file_size_bytes": file_size_bytes,

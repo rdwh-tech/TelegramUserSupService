@@ -1,11 +1,18 @@
 import json
 import unittest
 from types import SimpleNamespace
+
 import httpx
 
-from bot.services.api_client import (ActiveTicketExistsError, ApiAuthError, ApiError,
-                                 ApiUnavailableError, HttpApiClient, TicketClosedError,
-                                 build_api_client)
+from bot.services.api_client import (
+    ActiveTicketExistsError,
+    ApiAuthError,
+    ApiError,
+    ApiUnavailableError,
+    HttpApiClient,
+    TicketClosedError,
+    build_api_client,
+)
 
 SERVICE_TOKEN = "supersecret-service-token"
 
