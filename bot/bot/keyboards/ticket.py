@@ -8,6 +8,7 @@ from .callbacks import (
     REOPEN_TICKET,
 )
 
+
 def confirm_ticket_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=texts.BTN_CONFIRM_TICKET, callback_data=CONFIRM_CREATE_TICKET)],

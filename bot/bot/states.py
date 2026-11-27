@@ -1,5 +1,6 @@
 from aiogram.fsm.state import State, StatesGroup
 
+
 class BotState(StatesGroup):
     MAIN_MENU = State() # Главное меню
     FAQ_LIST = State() # Просмотр FAQ

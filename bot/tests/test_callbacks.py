@@ -2,6 +2,7 @@ import unittest
 
 from bot.keyboards import callbacks as cb
 
+
 class CallbackDataTests(unittest.TestCase):
     def test_csat_roundtrip(self):
         for score in range(1, 6):
