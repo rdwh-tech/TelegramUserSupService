@@ -127,3 +127,39 @@ jobs:
           TEST_DSN: postgres://postgres:postgres@127.0.0.1:5432/integration_tests?sslmode=disable
           TEST_AMQP_URL: amqp://ci:ci-password@127.0.0.1:5672/
         run: go test -count=1 -race -tags=integration ./...
+
+  
+  test-bot:
+    name: Telegram Bot (Python)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bot
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: bot/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest ruff
+          python -m pip check
+
+      - name: Check Python syntax
+        run: python -m compileall -q bot tests
+
+      - name: Lint
+        run: python -m ruff check bot tests
+
+      - name: Run bot tests
+        run: python -m pytest tests -v
+
+

@@ -3,6 +3,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from .. import texts
 from .callbacks import NEW_TICKET, OPEN_FAQ
 
+
 def main_menu_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=texts.BTN_FAQ, callback_data=OPEN_FAQ)],

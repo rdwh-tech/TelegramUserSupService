@@ -3,6 +3,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from .callbacks import build_csat_data
 
+
 def csat_keyboard(ticket_id) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     for score in range(1, 6):

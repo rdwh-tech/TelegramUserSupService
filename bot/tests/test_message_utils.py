@@ -10,9 +10,20 @@ from bot.services.message_utils import (
     validate_attachment,
 )
 
+
 def msg(**kw):
-    base = dict(text=None, caption=None, photo=None, document=None, sticker=None, animation=None,
-                voice=None, video_note=None, video=None, audio=None)
+    base = {
+    "text": None,
+    "caption": None,
+    "photo": None,
+    "document": None,
+    "sticker": None,
+    "animation": None,
+    "voice": None,
+    "video_note": None,
+    "video": None,
+    "audio": None,
+    }
     base.update(kw)
     return NS(**base)
 

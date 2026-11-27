@@ -2,8 +2,10 @@
 """Все параметры берутся из переменных окружения, секреты в коде не хранятся и в логи не капают (по идее)"""
 from functools import lru_cache
 from typing import Literal
+
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
 
