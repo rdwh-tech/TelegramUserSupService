@@ -132,7 +132,6 @@ jobs:
   test-bot:
     name: Telegram Bot (Python)
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: bot
@@ -151,12 +150,16 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt pytest
+          python -m pip install -r requirements.txt pytest ruff
           python -m pip check
 
       - name: Check Python syntax
         run: python -m compileall -q bot tests
 
+      - name: Lint
+        run: python -m ruff check bot tests
+
       - name: Run bot tests
         run: python -m pytest tests -v
+
 
