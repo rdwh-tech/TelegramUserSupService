@@ -12,16 +12,15 @@ import (
 	"github.com/rdwh-tech/TelegramUserSupService/internal/transport/httpjson"
 )
 
-type requestIDContextKey struct{}
-
 func RequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestID := r.Header.Get("X-Request-Id")
-		if !isCanonicalUUID(requestID) {
+		originalValid := isCanonicalUUID(requestID)
+		if !originalValid {
 			requestID = uuid.NewString()
 		}
 		w.Header().Set("X-Request-Id", requestID)
-		ctx := context.WithValue(r.Context(), requestIDContextKey{}, requestID)
+		ctx := httpjson.WithRequestID(r.Context(), requestID, originalValid)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -35,8 +34,7 @@ func isCanonicalUUID(value string) bool {
 }
 
 func RequestIDFromContext(ctx context.Context) string {
-	requestID, _ := ctx.Value(requestIDContextKey{}).(string)
-	return requestID
+	return httpjson.RequestID(ctx)
 }
 
 func RecoverJSON(logger *slog.Logger) func(http.Handler) http.Handler {

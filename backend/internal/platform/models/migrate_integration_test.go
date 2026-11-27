@@ -126,8 +126,8 @@ func TestBaselineMigrationRerun(t *testing.T) {
 	if err := db.Raw("SELECT count(*) FROM information_schema.tables WHERE table_schema = current_schema() AND table_type = 'BASE TABLE'").Scan(&tableCount).Error; err != nil {
 		t.Fatal(err)
 	}
-	if tableCount != 24 {
-		t.Fatalf("got %d migrated tables, want 24", tableCount)
+	if tableCount != 25 {
+		t.Fatalf("got %d migrated tables, want 25", tableCount)
 	}
 	var markerCount int64
 	if err := db.Raw("SELECT count(*) FROM companies WHERE name = ?", marker).Scan(&markerCount).Error; err != nil {
@@ -238,8 +238,15 @@ func TestAPIOneSchemaUpgradesWithoutLosingData(t *testing.T) {
 	if err := db.Raw(`SELECT version FROM schema_migrations ORDER BY version`).Scan(&versions).Error; err != nil {
 		t.Fatal(err)
 	}
-	if fmt.Sprint(versions) != "[1 2]" {
+	if fmt.Sprint(versions) != "[1 2 3]" {
 		t.Fatalf("migration versions=%v", versions)
+	}
+	var authAttemptsTable bool
+	if err := db.Raw(`SELECT to_regclass(current_schema() || '.connection_code_attempts') IS NOT NULL`).Scan(&authAttemptsTable).Error; err != nil {
+		t.Fatal(err)
+	}
+	if !authAttemptsTable {
+		t.Fatal("API-03 auth migration was not applied")
 	}
 
 	adminID := uuid.New()
