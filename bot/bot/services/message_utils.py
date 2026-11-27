@@ -36,21 +36,41 @@ def validate_attachment(message) -> tuple[bool, str]:
 
     return False, texts.ERR_UNSUPPORTED_CONTENT
 
+
 def extract_payload(message) -> dict:
-    # нужные параметры для ApiClient.send_message
     photos = getattr(message, "photo", None)
     document = getattr(message, "document", None)
     caption = getattr(message, "caption", None)
+
+    payload = {"telegram_message_id": message.message_id}
+
     if photos:
-        return {"message_type": "photo", "file_id": photos[-1].file_id, "caption": caption}
+        largest = photos[-1]
+        return {
+            **payload,
+            "message_type": "photo",
+            "file_id": largest.file_id,
+            "caption": caption,
+            "file_size_bytes": getattr(largest, "file_size", None),
+        }
+
     if document:
         return {
+            **payload,
             "message_type": "document",
             "file_id": document.file_id,
             "file_name": getattr(document, "file_name", None),
             "caption": caption,
+            "mime_type": getattr(document, "mime_type", None),
+            "file_size_bytes": getattr(document, "file_size", None),
         }
-    return {"message_type": "text", "content": message.text}
+
+    return {
+        **payload,
+        "message_type": "text",
+        "content": message.text,
+    }
+
 
 def split_text(text: str, limit: int = TELEGRAM_TEXT_LIMIT) -> list[str]:
     # нарезка длинного текста на части не длиннее допустимного лимита Telegram

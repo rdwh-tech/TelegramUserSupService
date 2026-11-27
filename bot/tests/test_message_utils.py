@@ -23,6 +23,7 @@ def msg(**kw):
     "video_note": None,
     "video": None,
     "audio": None,
+    "message_id": 100
     }
     base.update(kw)
     return NS(**base)
@@ -67,15 +68,52 @@ class ValidateAttachmentTests(unittest.TestCase):
 
 class ExtractPayloadTests(unittest.TestCase):
     def test_text(self):
-        self.assertEqual(extract_payload(msg(text="hello")), {"message_type": "text", "content": "hello"})
+        self.assertEqual(
+            extract_payload(msg(text="hello")),
+            {
+                "telegram_message_id": 100,
+                "message_type": "text",
+                "content": "hello",
+            },
+        )
 
     def test_photo_takes_largest_and_caption(self):
-        p = extract_payload(msg(photo=[NS(file_id="s"), NS(file_id="b")], caption="cap"))
-        self.assertEqual(p, {"message_type": "photo", "file_id": "b", "caption": "cap"})
+        p = extract_payload(
+            msg(
+                photo=[
+                    NS(file_id="s", file_size=10),
+                    NS(file_id="b", file_size=1000),
+                ],
+                caption="cap",
+            )
+        )
+        self.assertEqual(
+            p,
+            {
+                "telegram_message_id": 100,
+                "message_type": "photo",
+                "file_id": "b",
+                "caption": "cap",
+                "file_size_bytes": 1000,
+            },
+        )
 
     def test_document(self):
-        p = extract_payload(msg(document=doc("a.pdf"), caption=None))
-        self.assertEqual(p, {"message_type": "document", "file_id": "F1", "file_name": "a.pdf", "caption": None})
+        p = extract_payload(
+            msg(document=doc("a.pdf"), caption=None)
+        )
+        self.assertEqual(
+            p,
+            {
+                "telegram_message_id": 100,
+                "message_type": "document",
+                "file_id": "F1",
+                "file_name": "a.pdf",
+                "caption": None,
+                "mime_type": None,
+                "file_size_bytes": 1000,
+            },
+        )
 
 class TextHelpersTests(unittest.TestCase):
     def test_split_short_text_unchanged(self):
