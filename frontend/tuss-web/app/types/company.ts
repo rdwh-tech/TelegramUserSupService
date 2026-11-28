@@ -33,3 +33,19 @@ export interface UpdateBotConfigPayload {
   botToken?: string;
   welcomeMessage?: string;
 }
+
+export interface StaffMember {
+  id: string;
+  login: string;
+  fullName: string;
+  role: "operator_l1" | "operator_l2" | "admin";
+  activeTicketId?: string | null;
+  activeTicketNumber?: number | null;
+  isBlocked?: boolean;
+  createdAt: string;
+}
+
+export interface InviteOperatorPayload {
+  code: string;
+  role: "operator_l1" | "operator_l2";
+}

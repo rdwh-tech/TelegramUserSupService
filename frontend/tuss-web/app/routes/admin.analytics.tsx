@@ -1,94 +1,235 @@
 // app/routes/admin.analytics.tsx
-import React from "react";
-import { Box, Typography, Card, CardContent, Stack, Chip, Grid } from "@mui/material";
+import React, { useState, useMemo } from "react";
+import {
+  Box,
+  Typography,
+  Stack,
+  Chip,
+  Alert,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { RoleGuard } from "~/components/auth/RoleGuard";
 import { M3Icon } from "~/components/ui/M3Icon";
+import { M3Button } from "~/components/ui/M3Button";
+import { analyticsApi } from "~/api/analytics";
+import type { AnalyticsFilter } from "~/types/analytics";
+import {
+  AnalyticsFilterBar,
+  AnalyticsKPIGrid,
+  TicketVolumeChart,
+  CSATHistogram,
+  OperatorPerformanceTable,
+  type FilterState,
+} from "~/components/analytics";
 
 export function meta() {
   return [
-    { title: "Аналитика и SLA — TUSS Admin" },
-    { name: "description", content: "Дашборд аналитики обслуживания клиентов и соблюдения SLA" },
+    { title: "Аналитическая панель и SLA — TUSS Admin" },
+    {
+      name: "description",
+      content: "Сводные показатели эффективности поддержки, соблюдения SLA и удовлетворенности клиентов",
+    },
   ];
 }
 
 export default function AdminAnalyticsRoute() {
-  const kpiData = [
-    { title: "Всего тикетов за сегодня", value: "148", change: "+12%", icon: "confirmation_number", color: "#005AC1" },
-    { title: "Среднее время 1-го ответа", value: "3.2 мин", change: "-18%", icon: "timer", color: "#2E7D32" },
-    { title: "Соблюдение SLA", value: "97.4%", change: "+0.8%", icon: "check_circle", color: "#2E7D32" },
-    { title: "Средний CSAT", value: "4.8 / 5.0", change: "+0.2", icon: "star", color: "#ED6C02" },
-  ];
+  const [filters, setFilters] = useState<FilterState>({
+    period: "7d",
+    operatorId: "all",
+  });
+
+  // Преобразование пресетов в ISO диапазоны дат
+  const queryFilter = useMemo<Partial<AnalyticsFilter>>(() => {
+    const now = new Date();
+    const result: Partial<AnalyticsFilter> = {};
+
+    if (filters.operatorId !== "all") {
+      result.operatorId = filters.operatorId;
+    }
+
+    if (filters.period === "today") {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      result.startDate = start.toISOString();
+      result.endDate = now.toISOString();
+    } else if (filters.period === "yesterday") {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, -1);
+      result.startDate = start.toISOString();
+      result.endDate = end.toISOString();
+    } else if (filters.period === "7d") {
+      const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      result.startDate = start.toISOString();
+      result.endDate = now.toISOString();
+    } else if (filters.period === "30d") {
+      const start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      result.startDate = start.toISOString();
+      result.endDate = now.toISOString();
+    } else if (filters.period === "custom") {
+      if (filters.startDate) result.startDate = new Date(filters.startDate).toISOString();
+      if (filters.endDate) result.endDate = new Date(filters.endDate).toISOString();
+    }
+
+    return result;
+  }, [filters]);
+
+  // Запрос списка операторов
+  const {
+    data: operators = [],
+    isLoading: isLoadingOperators,
+  } = useQuery({
+    queryKey: ["analytics", "operators"],
+    queryFn: () => analyticsApi.getOperatorPerformance(),
+  });
+
+  // Запрос ключевых KPI метрик
+  const {
+    data: summary,
+    isLoading: isLoadingSummary,
+    isError: isErrorSummary,
+    refetch: refetchSummary,
+  } = useQuery({
+    queryKey: ["analytics", "summary", queryFilter],
+    queryFn: () => analyticsApi.getSummary(queryFilter),
+  });
+
+  // Запрос динамики объема тикетов
+  const {
+    data: volume = [],
+    isLoading: isLoadingVolume,
+    isError: isErrorVolume,
+    refetch: refetchVolume,
+  } = useQuery({
+    queryKey: ["analytics", "volume", queryFilter],
+    queryFn: () => analyticsApi.getTicketVolume(queryFilter),
+  });
+
+  // Запрос распределения оценок CSAT
+  const {
+    data: csat = [],
+    isLoading: isLoadingCsat,
+    isError: isErrorCsat,
+    refetch: refetchCsat,
+  } = useQuery({
+    queryKey: ["analytics", "csat", queryFilter],
+    queryFn: () => analyticsApi.getCSATDistribution(queryFilter),
+  });
+
+  const isAnyError = isErrorSummary || isErrorVolume || isErrorCsat;
+  const isAnyLoading = isLoadingSummary || isLoadingVolume || isLoadingCsat;
+
+  const handleRefreshAll = () => {
+    refetchSummary();
+    refetchVolume();
+    refetchCsat();
+  };
+
+  // Фильтрация отображаемых операторов при выборе конкретного сотрудника
+  const displayedOperators = useMemo(() => {
+    if (filters.operatorId === "all") return operators;
+    if (filters.operatorId === "empty") return [];
+    return operators.filter((o) => o.operatorId === filters.operatorId);
+  }, [operators, filters.operatorId]);
 
   return (
     <RoleGuard allowedRoles={["admin"]}>
-      <Box sx={{ maxWidth: 1200, mx: "auto" }}>
-        <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+      <Box sx={{ maxWidth: 1200, mx: "auto", pb: 5 }}>
+        {/* Заголовок страницы */}
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", sm: "center" },
+            mb: 3,
+          }}
+        >
           <div>
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              Аналитика и SLA
+            <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: "-0.01em" }}>
+              Аналитическая панель и SLA
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Сводные метрики операционной эффективности службы поддержки и контроль SLA
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Сводные показатели операционной эффективности поддержки, соблюдения регламентов и оценок клиентов
             </Typography>
           </div>
-          <Chip label="Панель администратора" color="secondary" variant="outlined" />
+
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+            <Tooltip title="Обновить аналитические данные">
+              <IconButton
+                onClick={handleRefreshAll}
+                disabled={isAnyLoading}
+                size="small"
+                data-testid="refresh-analytics-btn"
+                sx={{
+                  border: "1px solid",
+                  borderColor: "divider",
+                  borderRadius: 1,
+                  p: 0.75,
+                }}
+              >
+                <M3Icon name="refresh" size={18} />
+              </IconButton>
+            </Tooltip>
+            <Chip
+              label="Панель администратора"
+              color="secondary"
+              variant="outlined"
+              size="small"
+              sx={{ fontWeight: 600, fontSize: "0.75rem" }}
+            />
+          </Stack>
         </Stack>
 
-        {/* Сетка ключевых показателей (KPI Cards) */}
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "repeat(4, 1fr)" }, gap: 2, mb: 4 }}>
-          {kpiData.map((kpi) => (
-            <Card
-              key={kpi.title}
-              sx={{
-                p: 2.5,
-                borderRadius: 2,
-                border: "1px solid",
-                borderColor: "divider",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
-              }}
-            >
-              <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
-                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                  {kpi.title}
-                </Typography>
-                <Box
-                  sx={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 1.5,
-                    backgroundColor: `${kpi.color}14`,
-                    color: kpi.color,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <M3Icon name={kpi.icon} size={20} />
-                </Box>
-              </Stack>
-              <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-                {kpi.value}
-              </Typography>
-              <Typography variant="caption" sx={{ color: kpi.change.startsWith("+") ? "success.main" : "text.secondary", fontWeight: 600 }}>
-                {kpi.change} по сравнению со вчера
-              </Typography>
-            </Card>
-          ))}
+        {/* Ошибка загрузки данных с возможностью повтора */}
+        {isAnyError && (
+          <Alert
+            severity="error"
+            data-testid="analytics-error-banner"
+            action={
+              <M3Button color="inherit" size="small" onClick={handleRefreshAll}>
+                Повторить
+              </M3Button>
+            }
+            sx={{ mb: 3, borderRadius: 1.5 }}
+          >
+            Не удалось загрузить часть аналитических данных. Проверьте соединение с сервером.
+          </Alert>
+        )}
+
+        {/* Панель фильтрации по периодам и операторам (TUSS-FE-19) */}
+        <AnalyticsFilterBar
+          filters={filters}
+          onChange={setFilters}
+          operators={operators}
+          isLoading={isAnyLoading}
+        />
+
+        {/* Сетка из 6 ключевых KPI-виджетов (TUSS-FE-20) */}
+        <AnalyticsKPIGrid summary={summary} isLoading={isLoadingSummary} />
+
+        {/* Графики динамики тикетов и гистограмма оценок CSAT (TUSS-FE-21) */}
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", lg: "1.3fr 1fr" },
+            gap: 2.5,
+            mb: 3,
+          }}
+        >
+          <Box sx={{ minHeight: 320 }}>
+            <TicketVolumeChart data={volume} isLoading={isLoadingVolume} />
+          </Box>
+          <Box sx={{ minHeight: 320 }}>
+            <CSATHistogram data={csat} isLoading={isLoadingCsat} />
+          </Box>
         </Box>
 
-        <Card sx={{ p: 4, textAlign: "center", borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
-          <CardContent>
-            <Box sx={{ color: "primary.main", mb: 1.5 }}>
-              <M3Icon name="insights" size={48} />
-            </Box>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-              Детальные графики и отчеты
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 500, mx: "auto" }}>
-              Интерактивные диаграммы нагрузки по часам и отчеты по операторам подключаются в спринте С1 (TUSS-FE-19).
-            </Typography>
-          </CardContent>
-        </Card>
+        {/* Таблица продуктивности операторов и режим аудита (TUSS-FE-22) */}
+        <OperatorPerformanceTable
+          operators={displayedOperators}
+          isLoading={isLoadingOperators}
+        />
       </Box>
     </RoleGuard>
   );

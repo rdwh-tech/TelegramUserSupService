@@ -33,6 +33,7 @@ export function buildM3Theme(options: BuildThemeOptions = {}): Theme {
 
   let secondaryMain: string;
   let secondaryLight: string;
+  let secondaryDark: string;
   let secondaryContrastText = "#FFFFFF";
 
   let bgDefault: string;
@@ -53,6 +54,7 @@ export function buildM3Theme(options: BuildThemeOptions = {}): Theme {
 
       secondaryMain = hslToHex(h, 16, 42);
       secondaryLight = hslToHex(h, 24, 91);
+      secondaryDark = hslToHex(h, 16, 34);
 
       bgDefault = hslToHex(h, 18, 98.2);
       bgPaper = "#FFFFFF";
@@ -61,9 +63,11 @@ export function buildM3Theme(options: BuildThemeOptions = {}): Theme {
       textSecondary = "#43474E";
       dividerColor = "rgba(196, 198, 208, 0.4)";
     } else {
+      const { h: darkH, s: darkS, l: darkL } = hexToHsl(pMeta.primaryDark);
       primaryMain = pMeta.primaryDark;
       primaryLight = hslToHex(h, s, 28);
-      primaryDark = hslToHex(h, s, 18);
+      // В темной теме primaryDark служит состоянием hover для кнопок (чуть глубже тон 70-74%, чтобы не проваливаться в фон)
+      primaryDark = hslToHex(darkH, darkS, Math.max(darkL - 8, 60));
       primaryContrastText =
         preset === "pine"
           ? "#003826"
@@ -75,6 +79,8 @@ export function buildM3Theme(options: BuildThemeOptions = {}): Theme {
 
       secondaryMain = hslToHex(h, 18, 76);
       secondaryLight = hslToHex(h, 20, 26);
+      secondaryDark = hslToHex(h, 18, 68);
+      secondaryContrastText = preset === "berry" ? "#311F30" : "#1B2228";
 
       bgDefault = hslToHex(h, 14, 9);
       bgPaper = hslToHex(h, 12, 13);
@@ -95,6 +101,7 @@ export function buildM3Theme(options: BuildThemeOptions = {}): Theme {
 
       secondaryMain = hslToHex(h, 16, 42);
       secondaryLight = hslToHex(h, 24, 91);
+      secondaryDark = hslToHex(h, 16, 34);
 
       bgDefault = hslToHex(h, 16, 98.2);
       bgPaper = "#FFFFFF";
@@ -105,11 +112,13 @@ export function buildM3Theme(options: BuildThemeOptions = {}): Theme {
     } else {
       primaryMain = hslToHex(h, Math.max(s, 45), 76);
       primaryLight = hslToHex(h, s, 28);
-      primaryDark = hslToHex(h, s, 18);
-      primaryContrastText = hslToHex(h, s, 14);
+      primaryDark = hslToHex(h, Math.max(s, 45), 68);
+      primaryContrastText = hslToHex(h, Math.max(s, 60), 14);
 
       secondaryMain = hslToHex(h, 18, 76);
       secondaryLight = hslToHex(h, 20, 26);
+      secondaryDark = hslToHex(h, 18, 68);
+      secondaryContrastText = hslToHex(h, 24, 14);
 
       bgDefault = hslToHex(h, 14, 9);
       bgPaper = hslToHex(h, 12, 13);
@@ -138,6 +147,7 @@ export function buildM3Theme(options: BuildThemeOptions = {}): Theme {
       secondary: {
         main: secondaryMain,
         light: secondaryLight,
+        dark: secondaryDark,
         contrastText: secondaryContrastText,
       },
       error: {
@@ -195,8 +205,25 @@ export function buildM3Theme(options: BuildThemeOptions = {}): Theme {
             padding: buttonPadding,
             fontSize: buttonFontSize,
             fontWeight: 600,
-            transition: "background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease",
+            transition:
+              "background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease",
           },
+          contained: ({ ownerState }) => ({
+            boxShadow: "none",
+            "&:hover": {
+              boxShadow: isDark
+                ? "0 2px 8px rgba(0, 0, 0, 0.4)"
+                : "0 2px 6px rgba(0, 0, 0, 0.15)",
+              ...(ownerState.color === "primary" && {
+                backgroundColor: primaryDark,
+                color: primaryContrastText,
+              }),
+              ...(ownerState.color === "secondary" && {
+                backgroundColor: secondaryDark,
+                color: secondaryContrastText,
+              }),
+            },
+          }),
         },
       },
       MuiCard: {
