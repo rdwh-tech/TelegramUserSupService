@@ -11,6 +11,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "~/api/queryClient";
 import { AppThemeProvider } from "~/context/ThemeContext";
 import { AuthProvider } from "~/context/AuthContext";
+import { WebSocketProvider } from "~/context/WebSocketContext";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -44,7 +45,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <QueryClientProvider client={queryClient}>
           <AppThemeProvider>
             <AuthProvider>
-              {children}
+              <WebSocketProvider>
+                {children}
+              </WebSocketProvider>
             </AuthProvider>
           </AppThemeProvider>
         </QueryClientProvider>

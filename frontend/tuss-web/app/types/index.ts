@@ -7,3 +7,4 @@ export * from "./faq";
 export * from "./ticket";
 export * from "./message";
 export * from "./analytics";
+export * from "./websocket";
