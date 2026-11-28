@@ -474,6 +474,7 @@ export const TicketQueueTable: React.FC<TicketQueueTableProps> = ({
                                 size="small"
                                 onClick={() => onTakeTicket(ticket.id)}
                                 disabled={hasActiveTicket || takingTicketId === ticket.id}
+                                isLoading={takingTicketId === ticket.id}
                                 data-testid={`take-ticket-button-${ticket.id}`}
                                 startIcon={
                                   <M3Icon

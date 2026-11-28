@@ -4,6 +4,8 @@ import { screen, fireEvent } from "@testing-library/react";
 import { renderWithProviders } from "~/../test/test-utils";
 import { AppHeader } from "./AppHeader";
 import * as AuthContextModule from "~/context/AuthContext";
+import * as WebSocketContextModule from "~/context/WebSocketContext";
+import { WebSocketService } from "~/services/websocket";
 import type { User } from "~/types/user";
 
 describe("AppHeader Component", () => {
@@ -148,5 +150,68 @@ describe("AppHeader Component", () => {
     const logoutButton = screen.getByLabelText("Выйти из системы");
     fireEvent.click(logoutButton);
     expect(mockLogout).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders 'Переподключение' when WebSocket is reconnecting (TUSS-FE-31 AC 1)", () => {
+    setupAuth({
+      id: "u-1",
+      login: "alex",
+      fullName: "Алексей",
+      role: "operator_l1",
+      companyId: "c-001",
+      isBlocked: false,
+      createdAt: "",
+      updatedAt: "",
+    });
+
+    vi.spyOn(WebSocketContextModule, "useWebSocket").mockReturnValue({
+      status: "reconnecting",
+      isConnected: false,
+      isReconnecting: true,
+      isDisconnected: false,
+      reconnect: vi.fn(),
+      simulateEvent: vi.fn(),
+      service: new WebSocketService(),
+    });
+
+    renderWithProviders(
+      <AppHeader sidebarOpen={true} onToggleSidebar={mockToggleSidebar} />
+    );
+
+    expect(screen.getByText("Переподключение")).toBeInTheDocument();
+  });
+
+  it("renders 'Отключено' and allows reconnect on click (TUSS-FE-31 AC 1)", () => {
+    setupAuth({
+      id: "u-1",
+      login: "alex",
+      fullName: "Алексей",
+      role: "operator_l1",
+      companyId: "c-001",
+      isBlocked: false,
+      createdAt: "",
+      updatedAt: "",
+    });
+
+    const mockReconnect = vi.fn();
+    vi.spyOn(WebSocketContextModule, "useWebSocket").mockReturnValue({
+      status: "disconnected",
+      isConnected: false,
+      isReconnecting: false,
+      isDisconnected: true,
+      reconnect: mockReconnect,
+      simulateEvent: vi.fn(),
+      service: new WebSocketService(),
+    });
+
+    renderWithProviders(
+      <AppHeader sidebarOpen={true} onToggleSidebar={mockToggleSidebar} />
+    );
+
+    expect(screen.getByText("Отключено")).toBeInTheDocument();
+
+    const indicator = screen.getByTestId("connection-status-indicator");
+    fireEvent.click(indicator);
+    expect(mockReconnect).toHaveBeenCalledTimes(1);
   });
 });

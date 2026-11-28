@@ -13,12 +13,24 @@ export const M3Button: React.FC<M3ButtonProps> = ({
     disabled,
     children,
     startIcon,
+    onClick,
     ...props
 }) => {
     const isBusy = isLoading || loading;
+
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        if (isBusy || disabled) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        onClick?.(e);
+    };
+
     return (
         <Button
             {...props}
+            onClick={handleClick}
             disabled={disabled || isBusy}
             startIcon={
                 isBusy ? (

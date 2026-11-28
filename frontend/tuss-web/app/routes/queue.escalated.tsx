@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { RoleGuard } from "~/components/auth/RoleGuard";
 import { useAuth } from "~/context/AuthContext";
+import { useWebSocket } from "~/context/WebSocketContext";
 import { ticketsApi } from "~/api/tickets";
 import { M3Icon } from "~/components/ui/M3Icon";
 import { ActiveTicketBanner } from "~/components/tickets/ActiveTicketBanner";
@@ -62,11 +63,40 @@ export default function QueueEscalatedRoute() {
     }
   }, [isAdmin]);
 
+  const ws = useWebSocket();
+
   useEffect(() => {
     loadQueueData();
   }, [loadQueueData]);
 
+  // Подписка на события очереди L2 в реальном времени (TUSS-FE-30)
+  useEffect(() => {
+    const unsubAssigned = ws.service.on("ticket.assigned", (event) => {
+      const { ticketId } = event.payload;
+      if (ticketId) {
+        setTickets((prev) => prev.filter((t) => t.id !== ticketId));
+      }
+    });
+
+    const unsubStatus = ws.service.on("ticket.status_changed", (event) => {
+      const { ticketId, status } = event.payload;
+      if (ticketId && status === "closed") {
+        setTickets((prev) => prev.filter((t) => t.id !== ticketId));
+      }
+    });
+
+    return () => {
+      unsubAssigned();
+      unsubStatus();
+    };
+  }, [ws.service]);
+
   const handleTakeTicket = async (ticketId: string) => {
+    // Double-click protection (TUSS-FE-33)
+    if (takingTicketId) {
+      return;
+    }
+
     if (activeTicket) {
       setErrorMessage(
         `У вас уже есть активный тикет #${activeTicket.ticketNumber}. Завершите его перед взятием следующего.`
