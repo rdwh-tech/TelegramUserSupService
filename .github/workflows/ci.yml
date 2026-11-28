@@ -187,6 +187,9 @@ jobs:
           python -m pip install -r requirements-dev.txt
           python -m pip check
 
+      - name: Lint SLA code
+        run: python -m ruff check .
+
       - name: Run SLA tests
         run: python -m pytest
 
