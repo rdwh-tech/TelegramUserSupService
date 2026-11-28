@@ -12,16 +12,19 @@ export const ReconnectionBanner: React.FC = () => {
   const isDisconnected = status === "disconnected";
   const isVisible = isReconnecting || isDisconnected;
 
+  if (!isVisible) {
+    return null;
+  }
+
   return (
-    <Collapse in={isVisible} unmountOnExit>
-      <Box
-        data-testid="reconnection-banner"
-        sx={{
-          width: "100%",
-          position: "relative",
-          zIndex: (theme) => theme.zIndex.appBar - 1,
-        }}
-      >
+    <Box
+      data-testid="reconnection-banner"
+      sx={{
+        width: "100%",
+        position: "relative",
+        zIndex: (theme) => theme.zIndex.appBar - 1,
+      }}
+    >
         {isReconnecting && (
           <Alert
             severity="warning"
@@ -78,6 +81,5 @@ export const ReconnectionBanner: React.FC = () => {
           </Alert>
         )}
       </Box>
-    </Collapse>
   );
 };

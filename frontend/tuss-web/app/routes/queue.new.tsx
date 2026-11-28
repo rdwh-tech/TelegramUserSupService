@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { RoleGuard } from "~/components/auth/RoleGuard";
 import { useAuth } from "~/context/AuthContext";
+import { useWebSocket } from "~/context/WebSocketContext";
 import { ticketsApi } from "~/api/tickets";
 import { M3Icon } from "~/components/ui/M3Icon";
 import { ActiveTicketBanner } from "~/components/tickets/ActiveTicketBanner";
@@ -62,9 +63,36 @@ export default function QueueNewRoute() {
     }
   }, [isAdmin]);
 
+  const ws = useWebSocket();
+
   useEffect(() => {
     loadQueueData();
   }, [loadQueueData]);
+
+  // Подписка на события очереди L1 в реальном времени (TUSS-FE-30)
+  useEffect(() => {
+    const unsubCreated = ws.service.on("ticket.created", (event) => {
+      const newTicket = event.payload.ticket;
+      if (newTicket) {
+        setTickets((prev) => {
+          if (prev.some((t) => t.id === newTicket.id)) return prev;
+          return [newTicket, ...prev];
+        });
+      }
+    });
+
+    const unsubAssigned = ws.service.on("ticket.assigned", (event) => {
+      const { ticketId } = event.payload;
+      if (ticketId) {
+        setTickets((prev) => prev.filter((t) => t.id !== ticketId));
+      }
+    });
+
+    return () => {
+      unsubCreated();
+      unsubAssigned();
+    };
+  }, [ws.service]);
 
   const handleTakeTicket = async (ticketId: string) => {
     // Double-click protection (TUSS-FE-33)

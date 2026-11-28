@@ -91,7 +91,7 @@ export const SLAIndicator: React.FC<SLAIndicatorProps> = ({ sla, label, showDeta
   };
 
   // Если FRT факт (например, для L2 эскалации), показываем TTR
-  if (frtInfo?.formattedTime.includes("факт") && ttrInfo) {
+  if (frtInfo?.formattedTime?.includes("факт") && ttrInfo) {
     primaryInfo = ttrInfo;
   }
 
