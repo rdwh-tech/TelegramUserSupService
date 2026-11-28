@@ -206,4 +206,39 @@ describe("TicketsArchiveRoute [TUSS-FE-16]", () => {
       expect(openBtn).toHaveAttribute("href", "/tickets/t-arch-1");
     });
   });
+
+  it("handles operator audit mode from URL parameters", async () => {
+    vi.spyOn(AuthContextModule, "useAuth").mockReturnValue({
+      user: mockAdminUser,
+      isAuthenticated: true,
+      isLoading: false,
+      login: vi.fn(),
+      register: vi.fn(),
+      logout: vi.fn(),
+      refreshUser: vi.fn(),
+    });
+
+    vi.spyOn(ticketsApi, "getArchivedTickets").mockResolvedValue(sampleClosedTickets);
+
+    renderWithProviders(<TicketsArchiveRoute />, {
+      initialEntries: ["/tickets/archive?operatorId=u-l1-001&search=Алексей%20Смирнов"],
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("audit-mode-banner")).toBeInTheDocument();
+      expect(screen.getByText(/Режим аудита: показаны закрытые обращения сотрудника/i)).toBeInTheDocument();
+      expect(screen.getByText("#3001")).toBeInTheDocument();
+      expect(screen.queryByText("#3002")).not.toBeInTheDocument();
+    });
+
+    // Reset audit filter
+    const resetBtn = screen.getByTestId("reset-audit-filter-btn");
+    fireEvent.click(resetBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("audit-mode-banner")).not.toBeInTheDocument();
+      expect(screen.getByText("#3001")).toBeInTheDocument();
+      expect(screen.getByText("#3002")).toBeInTheDocument();
+    });
+  });
 });
