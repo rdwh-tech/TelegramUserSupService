@@ -96,8 +96,28 @@ export const StaffTable: React.FC<StaffTableProps> = ({
             borderColor: "divider",
           }}
         >
-          <Typography variant="body2" color="text.secondary">
-            В компании пока нет привязанных сотрудников
+          <Box
+            sx={{
+              width: 48,
+              height: 48,
+              borderRadius: "50%",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#E7F0FF",
+              color: "primary.main",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              mx: "auto",
+              mb: 1.5,
+            }}
+          >
+            <M3Icon name="group_off" size={24} />
+          </Box>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            Сотрудники не найдены
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            В компании пока нет привязанных сотрудников. Пригласите оператора по 6-значному коду.
           </Typography>
         </Box>
       ) : (

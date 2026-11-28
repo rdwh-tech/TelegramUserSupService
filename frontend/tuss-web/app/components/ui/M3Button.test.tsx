@@ -30,4 +30,20 @@ describe("M3Button Component", () => {
     expect(button).toBeDisabled();
     expect(button.querySelector(".MuiCircularProgress-root")).toBeInTheDocument();
   });
+
+  it("prevents double-click and ignores clicks when loading or disabled (TUSS-FE-33)", () => {
+    const handleClick = vi.fn();
+    const { rerender } = renderWithProviders(
+      <M3Button onClick={handleClick}>Сохранить</M3Button>
+    );
+
+    const button = screen.getByRole("button", { name: "Сохранить" });
+    fireEvent.click(button);
+    expect(handleClick).toHaveBeenCalledTimes(1);
+
+    // При переходе в isLoading повторный клик блокируется
+    rerender(<M3Button onClick={handleClick} isLoading>Сохранить</M3Button>);
+    fireEvent.click(button);
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
 });

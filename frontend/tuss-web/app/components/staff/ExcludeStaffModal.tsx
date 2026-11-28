@@ -141,6 +141,7 @@ export const ExcludeStaffModal: React.FC<ExcludeStaffModalProps> = ({
           color="error"
           onClick={handleExclude}
           disabled={isSubmitting}
+          isLoading={isSubmitting}
           data-testid="confirm-exclude-btn"
         >
           {isSubmitting ? "Исключение..." : "Исключить"}

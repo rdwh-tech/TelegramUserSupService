@@ -406,6 +406,7 @@ export const TicketQueueCard: React.FC<TicketQueueCardProps> = ({
                 size="small"
                 onClick={() => onTakeTicket(ticket.id)}
                 disabled={hasActiveTicket || isTaking}
+                isLoading={isTaking}
                 data-testid={`take-ticket-button-${ticket.id}`}
                 startIcon={<M3Icon name={isTaking ? "hourglass_empty" : "play_arrow"} size={16} />}
                 sx={{ fontSize: "0.8rem", py: 0.45, px: 1.5 }}

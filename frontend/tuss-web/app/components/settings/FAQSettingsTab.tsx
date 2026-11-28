@@ -213,8 +213,28 @@ export const FAQSettingsTab: React.FC<FAQSettingsTabProps> = ({ onSuccessToast }
             sx={{ py: 6, textAlign: "center" }}
             data-testid="faq-empty-state"
           >
-            <Typography variant="body2" color="text.secondary">
-              В базе знаний пока нет добавленных вопросов
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: "50%",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#E7F0FF",
+                color: "primary.main",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                mx: "auto",
+                mb: 1.5,
+              }}
+            >
+              <M3Icon name="quiz" size={24} />
+            </Box>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+              Вопросы и ответы пока не добавлены
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Нажмите «Добавить вопрос», чтобы создать первую запись базы знаний для Telegram-бота
             </Typography>
           </Box>
         ) : (
@@ -366,6 +386,7 @@ export const FAQSettingsTab: React.FC<FAQSettingsTabProps> = ({ onSuccessToast }
               type="submit"
               variant="contained"
               disabled={createMutation.isPending || updateMutation.isPending}
+              isLoading={createMutation.isPending || updateMutation.isPending}
               data-testid="submit-faq-btn"
             >
               {editingItem ? "Сохранить" : "Добавить"}
@@ -402,6 +423,7 @@ export const FAQSettingsTab: React.FC<FAQSettingsTabProps> = ({ onSuccessToast }
             color="error"
             onClick={handleConfirmDelete}
             disabled={deleteMutation.isPending}
+            isLoading={deleteMutation.isPending}
             data-testid="confirm-delete-faq-btn"
           >
             {deleteMutation.isPending ? "Удаление..." : "Удалить"}

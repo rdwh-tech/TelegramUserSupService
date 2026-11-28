@@ -67,6 +67,11 @@ export default function QueueNewRoute() {
   }, [loadQueueData]);
 
   const handleTakeTicket = async (ticketId: string) => {
+    // Double-click protection (TUSS-FE-33)
+    if (takingTicketId) {
+      return;
+    }
+
     if (activeTicket) {
       setErrorMessage(
         `У вас уже есть активный тикет #${activeTicket.ticketNumber}. Завершите его перед взятием следующего.`
