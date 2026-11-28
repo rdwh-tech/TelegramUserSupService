@@ -2,6 +2,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
+from statistics import fmean
 
 from working_hours import WorkingSchedule, add_working_minutes, working_minutes
 
@@ -100,4 +101,9 @@ def calculate_art(
     waits: Iterable[tuple[datetime, datetime | None]],
 ) -> float | None:
     """Average the working minutes for subsequent customer replies."""
-    raise NotImplementedError
+    durations = [
+        working_minutes(schedule, sent_at, answered_at)
+        for sent_at, answered_at in waits
+        if answered_at is not None
+    ]
+    return fmean(durations) if durations else None
