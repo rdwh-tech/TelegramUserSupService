@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 
-from working_hours import WorkingSchedule
+from working_hours import WorkingSchedule, add_working_minutes, working_minutes
 
 
 class SLAStatus(StrEnum):
@@ -28,7 +28,31 @@ class SLAResult:
 
     @property
     def is_sla_violated(self) -> bool:
-        raise NotImplementedError
+        return self.frt.breached or self.ttr.breached
+
+
+def _calculate_timer(
+    schedule: WorkingSchedule,
+    *,
+    started_at: datetime,
+    limit_minutes: int,
+    as_of: datetime,
+    completed_at: datetime | None,
+    ticket_closed: bool,
+) -> tuple[TimerResult, bool]:
+    if limit_minutes <= 0:
+        raise ValueError("SLA limit must be positive")
+
+    active = completed_at is None and not ticket_closed
+    elapsed = working_minutes(schedule, started_at, completed_at or as_of)
+    result = TimerResult(
+        deadline=add_working_minutes(schedule, started_at, limit_minutes),
+        actual_minutes=elapsed if completed_at is not None else None,
+        remaining_minutes=max(0.0, limit_minutes - elapsed) if active else 0.0,
+        breached=elapsed > limit_minutes,
+    )
+    warning = active and elapsed >= limit_minutes * 7 / 10
+    return result, warning
 
 
 def calculate_sla(
@@ -43,7 +67,32 @@ def calculate_sla(
     closed_at: datetime | None = None,
 ) -> SLAResult:
     """Calculate the first-response and resolution timers for a ticket."""
-    raise NotImplementedError
+    as_of = closed_at or now
+    frt, frt_warning = _calculate_timer(
+        schedule,
+        started_at=frt_started_at,
+        limit_minutes=frt_limit_minutes,
+        as_of=as_of,
+        completed_at=first_response_at,
+        ticket_closed=closed_at is not None,
+    )
+    ttr, ttr_warning = _calculate_timer(
+        schedule,
+        started_at=ttr_started_at,
+        limit_minutes=ttr_limit_minutes,
+        as_of=as_of,
+        completed_at=closed_at,
+        ticket_closed=closed_at is not None,
+    )
+
+    if frt.breached or ttr.breached:
+        status = SLAStatus.BREACHED
+    elif frt_warning or ttr_warning:
+        status = SLAStatus.WARNING
+    else:
+        status = SLAStatus.OK
+
+    return SLAResult(frt=frt, ttr=ttr, status=status)
 
 
 def calculate_art(
