@@ -14,7 +14,42 @@ import type {
   CreateFAQPayload,
   UpdateFAQPayload,
   DaySchedule,
+  StaffMember,
+  InviteOperatorPayload,
 } from "~/types";
+
+export let mockStaffMembers: StaffMember[] = [
+  {
+    id: "u-l1-001",
+    login: "alex_l1",
+    fullName: "Алексей Смирнов",
+    role: "operator_l1",
+    activeTicketId: "t-1041",
+    activeTicketNumber: 1041,
+    isBlocked: false,
+    createdAt: "2026-01-10T10:00:00Z",
+  },
+  {
+    id: "u-l2-002",
+    login: "daria_l2",
+    fullName: "Дарья Ковалёва",
+    role: "operator_l2",
+    activeTicketId: null,
+    activeTicketNumber: null,
+    isBlocked: false,
+    createdAt: "2026-01-11T11:00:00Z",
+  },
+  {
+    id: "u-adm-003",
+    login: "admin_boss",
+    fullName: "Иван Руководитель",
+    role: "admin",
+    activeTicketId: null,
+    activeTicketNumber: null,
+    isBlocked: false,
+    createdAt: "2026-01-01T09:00:00Z",
+  },
+];
 
 export const settingsHandlers = [
   // 1. Вкладка "Компания" (FR-WEB-21)
@@ -122,6 +157,64 @@ export const settingsHandlers = [
     const index = mockFAQs.findIndex((f) => f.id === params.id);
     if (index !== -1) {
       mockFAQs.splice(index, 1);
+    }
+    return HttpResponse.json({ success: true });
+  }),
+
+  // 6. Штат сотрудников (FR-WEB-6, FR-API-16..18)
+  http.get("*/api/company/staff", async () => {
+    await delay(200);
+    return HttpResponse.json(mockStaffMembers);
+  }),
+
+  http.post("*/api/company/staff/invite", async ({ request }) => {
+    await delay(350);
+    const body = (await request.json()) as InviteOperatorPayload;
+    const cleanCode = (body.code || "").trim().toUpperCase();
+
+    // Валидация 6-значного персонального кода
+    if (cleanCode !== "KUQ3W1" && cleanCode !== "VALID1" && cleanCode !== "OP1234") {
+      return HttpResponse.json(
+        { message: "Введенный код недействителен" },
+        { status: 400 }
+      );
+    }
+
+    const newStaff: StaffMember = {
+      id: `u-invited-${Date.now()}`,
+      login: "mikhail_new",
+      fullName: "Михаил Новичков",
+      role: body.role || "operator_l1",
+      activeTicketId: null,
+      activeTicketNumber: null,
+      isBlocked: false,
+      createdAt: new Date().toISOString(),
+    };
+    mockStaffMembers.push(newStaff);
+
+    return HttpResponse.json({
+      success: true,
+      message: "Приглашение успешно отправлено",
+      staff: newStaff,
+    });
+  }),
+
+  http.patch("*/api/company/staff/:id/role", async ({ params, request }) => {
+    await delay(250);
+    const body = (await request.json()) as { role: "operator_l1" | "operator_l2" };
+    const member = mockStaffMembers.find((m) => m.id === params.id);
+    if (!member) {
+      return HttpResponse.json({ message: "Сотрудник не найден" }, { status: 404 });
+    }
+    member.role = body.role;
+    return HttpResponse.json(member);
+  }),
+
+  http.delete("*/api/company/staff/:id", async ({ params }) => {
+    await delay(300);
+    const idx = mockStaffMembers.findIndex((m) => m.id === params.id);
+    if (idx !== -1) {
+      mockStaffMembers.splice(idx, 1);
     }
     return HttpResponse.json({ success: true });
   }),
