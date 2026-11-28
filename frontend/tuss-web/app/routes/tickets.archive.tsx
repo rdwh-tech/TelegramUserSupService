@@ -1,6 +1,6 @@
 // app/routes/tickets.archive.tsx
 import React, { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import {
   Box,
   Typography,
@@ -52,10 +52,14 @@ export function formatDateTime(isoString: string): string {
 
 export default function TicketsArchiveRoute() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlSearch = searchParams.get("search") || "";
+  const urlOperatorId = searchParams.get("operatorId") || "";
+  const urlOperatorName = searchParams.get("operatorName") || searchParams.get("search") || "";
 
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(urlOperatorId ? "" : urlSearch);
   const [periodFilter, setPeriodFilter] = useState<"all" | "today" | "7days" | "30days">("all");
 
   const loadArchiveData = async () => {
@@ -95,7 +99,12 @@ export default function TicketsArchiveRoute() {
   // 2. Поисковая фильтрация и фильтрация по периодам
   const filteredTickets = useMemo(() => {
     return roleFilteredTickets.filter((ticket) => {
-      // Поиск по номеру, клиенту или тексту
+      // Фильтр по оператору (из аудита)
+      if (urlOperatorId && ticket.assignedOperatorId && ticket.assignedOperatorId !== urlOperatorId) {
+        return false;
+      }
+
+      // Поиск по номеру, клиенту, тексту или оператору
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().replace("#", "").trim();
         const matchesNumber = String(ticket.ticketNumber).includes(q);
@@ -103,8 +112,9 @@ export default function TicketsArchiveRoute() {
           ticket.client.fullName?.toLowerCase().includes(q) ||
           ticket.client.username?.toLowerCase().includes(q);
         const matchesText = ticket.firstMessagePreview?.toLowerCase().includes(q);
+        const matchesOperator = ticket.assignedOperatorName?.toLowerCase().includes(q);
 
-        if (!matchesNumber && !matchesClient && !matchesText) {
+        if (!matchesNumber && !matchesClient && !matchesText && !matchesOperator) {
           return false;
         }
       }
@@ -122,7 +132,7 @@ export default function TicketsArchiveRoute() {
 
       return true;
     });
-  }, [roleFilteredTickets, searchQuery, periodFilter]);
+  }, [roleFilteredTickets, searchQuery, periodFilter, urlOperatorId]);
 
   return (
     <RoleGuard allowedRoles={["operator_l1", "operator_l2", "admin"]}>
@@ -171,6 +181,45 @@ export default function TicketsArchiveRoute() {
             </Tooltip>
           </Stack>
         </Stack>
+
+        {/* Баннер режима аудита */}
+        {urlOperatorId && (
+          <Box
+            data-testid="audit-mode-banner"
+            sx={{
+              p: 1.5,
+              mb: 2.5,
+              borderRadius: 1,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(0, 119, 214, 0.15)" : "rgba(0, 90, 193, 0.08)",
+              border: "1px solid",
+              borderColor: "primary.main",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 1,
+            }}
+          >
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <M3Icon name="visibility" size={18} />
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                Режим аудита: показаны закрытые обращения сотрудника {urlOperatorName ? `«${urlOperatorName}»` : ""}
+              </Typography>
+            </Stack>
+            <M3Button
+              size="small"
+              variant="text"
+              onClick={() => {
+                setSearchParams({});
+                setSearchQuery("");
+              }}
+              data-testid="reset-audit-filter-btn"
+            >
+              Сбросить фильтр аудита
+            </M3Button>
+          </Box>
+        )}
 
         {/* Панель фильтров и поиска */}
         <Paper
