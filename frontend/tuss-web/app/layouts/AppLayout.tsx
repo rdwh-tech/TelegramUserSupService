@@ -5,6 +5,7 @@ import { Box, Typography, CircularProgress } from "@mui/material";
 import { useAuth } from "~/context/AuthContext";
 import { AppHeader } from "~/components/layout/AppHeader";
 import { AppSidebar } from "~/components/layout/AppSidebar";
+import { ReconnectionBanner } from "~/components/layout/ReconnectionBanner";
 
 export default function AppLayout() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -55,8 +56,10 @@ export default function AppLayout() {
       <AppHeader
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
-        isConnected={true}
       />
+
+      {/* Баннер восстановления сетевого соединения (TUSS-FE-31) */}
+      <ReconnectionBanner />
 
       {/* 2. Рабочее пространство (Sidebar + Main Area) */}
       <Box sx={{ display: "flex", flex: 1, position: "relative" }}>

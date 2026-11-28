@@ -10,6 +10,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { useAuth } from "~/context/AuthContext";
+import { useWebSocket } from "~/context/WebSocketContext";
 import { M3Icon } from "~/components/ui/M3Icon";
 import { M3Button } from "~/components/ui/M3Button";
 import { ThemeSwitcherMenu } from "~/components/layout/ThemeSwitcherMenu";
@@ -23,9 +24,52 @@ interface AppHeaderProps {
 export const AppHeader: React.FC<AppHeaderProps> = ({
   sidebarOpen,
   onToggleSidebar,
-  isConnected = true,
+  isConnected,
 }) => {
   const { user, logout } = useAuth();
+  const ws = useWebSocket();
+
+  // Вычисляем статус с учетом возможного явного пропса isConnected
+  const effectiveStatus =
+    isConnected === false
+      ? "disconnected"
+      : isConnected === true
+      ? "connected"
+      : ws.status;
+
+  const isOnline = effectiveStatus === "connected";
+  const isReconnecting =
+    effectiveStatus === "reconnecting" || effectiveStatus === "connecting";
+
+  const getStatusColor = () => {
+    if (isOnline) return "#2E7D32";
+    if (isReconnecting) return "#ED6C02";
+    return "#D32F2F";
+  };
+
+  const getStatusBg = () => {
+    if (isOnline) return "rgba(46, 125, 50, 0.08)";
+    if (isReconnecting) return "rgba(237, 108, 2, 0.08)";
+    return "rgba(211, 47, 47, 0.08)";
+  };
+
+  const getStatusBorder = () => {
+    if (isOnline) return "rgba(46, 125, 50, 0.25)";
+    if (isReconnecting) return "rgba(237, 108, 2, 0.25)";
+    return "rgba(211, 47, 47, 0.25)";
+  };
+
+  const getStatusLabel = () => {
+    if (isOnline) return "В сети";
+    if (isReconnecting) return "Переподключение";
+    return "Отключено";
+  };
+
+  const getStatusTooltip = () => {
+    if (isOnline) return "WebSocket соединение активно";
+    if (isReconnecting) return "Выполняется восстановление связи с сервером...";
+    return "Связь потеряна. Нажмите для повторного подключения";
+  };
 
   // Локализация роли для бейджа
   const getRoleLabel = (role?: string) => {
@@ -197,19 +241,23 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         {/* Переключатель темы и палитры Material 3 */}
         <ThemeSwitcherMenu />
 
-        {/* Индикатор сетевого соединения / WebSocket (FR-WEB-29, SRS 4.1.2) */}
-        <Tooltip title={isConnected ? "WebSocket соединение активно" : "Связь потеряна"}>
+        {/* Индикатор сетевого соединения / WebSocket (FR-WEB-29, SRS 4.1.2, TUSS-FE-31) */}
+        <Tooltip title={getStatusTooltip()}>
           <Stack
             direction="row"
             spacing={0.8}
+            onClick={!isOnline ? ws.reconnect : undefined}
+            data-testid="connection-status-indicator"
             sx={{
               alignItems: "center",
               px: 1.25,
               py: 0.4,
               borderRadius: 1,
               border: "1px solid",
-              borderColor: isConnected ? "rgba(46, 125, 50, 0.25)" : "rgba(211, 47, 47, 0.25)",
-              backgroundColor: isConnected ? "rgba(46, 125, 50, 0.08)" : "rgba(211, 47, 47, 0.08)",
+              borderColor: getStatusBorder(),
+              backgroundColor: getStatusBg(),
+              cursor: !isOnline ? "pointer" : "default",
+              transition: "all 0.2s ease",
             }}
           >
             <Box
@@ -217,18 +265,26 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 width: 7,
                 height: 7,
                 borderRadius: "50%",
-                backgroundColor: isConnected ? "#2E7D32" : "#D32F2F",
+                backgroundColor: getStatusColor(),
+                ...(isReconnecting && {
+                  animation: "pulse 1.5s infinite ease-in-out",
+                  "@keyframes pulse": {
+                    "0%": { opacity: 0.4 },
+                    "50%": { opacity: 1 },
+                    "100%": { opacity: 0.4 },
+                  },
+                }),
               }}
             />
             <Typography
               variant="caption"
               sx={{
                 fontWeight: 600,
-                color: isConnected ? "#2E7D32" : "#D32F2F",
+                color: getStatusColor(),
                 display: { xs: "none", sm: "inline" },
               }}
             >
-              {isConnected ? "В сети" : "Офлайн"}
+              {getStatusLabel()}
             </Typography>
           </Stack>
         </Tooltip>
